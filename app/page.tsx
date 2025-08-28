@@ -1,3 +1,7 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+
 export default function Home() {
   return (
     <div>
@@ -11,6 +15,13 @@ export default function Home() {
         Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance.
         The first line of Lorem Ipsum, Lorem ipsum dolor sit amet.., comes from a line in section 1.10.32.
       </p>
+      <Button variant="default" onClick={() => console.log(12)}>
+        Default
+      </Button>
+
+      <Button variant="destructive" onClick={() => console.log(12)}>
+        Destructive
+      </Button>
     </div>
   );
 }
