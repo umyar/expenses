@@ -1,6 +1,8 @@
-import { Button } from '@/components/ui/button';
 import * as React from 'react';
+import { Button } from '@/components/ui/button';
 import { PowerIcon, Wallet } from 'lucide-react';
+
+import { signOut } from '@/auth';
 
 import {
   Sidebar,
@@ -101,8 +103,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <form
           action={async () => {
             'use server';
-            console.log('Sign out');
-            // await signOut({ redirectTo: '/' });
+            await signOut({ redirectTo: '/' });
           }}
         >
           <Button variant="ghost" className="cursor-pointer w-full">
