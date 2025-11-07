@@ -22,12 +22,19 @@ CREATE TABLE if NOT EXISTS receipts (
   created_at TIMESTAMP DEFAULT NOW ()
 );
 
+-- expenses categories table
+CREATE TABLE if NOT EXISTS expenses_categories (
+  id SERIAL,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL PRIMARY KEY
+);
+
 -- Expenses table
 CREATE TABLE if NOT EXISTS expenses (
   id SERIAL PRIMARY KEY,
   receipt_id INT REFERENCES receipts (id) ON DELETE CASCADE,
-  description TEXT NOT NULL,
-  category TEXT,
+  name TEXT NOT NULL,
+  category TEXT REFERENCES expenses_categories (slug) ON DELETE SET NULL,
   amount NUMERIC(12, 2) NOT NULL,
   added_by UUID REFERENCES users (id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT NOW ()
