@@ -17,7 +17,7 @@ CREATE TABLE if NOT EXISTS receipts (
   id SERIAL PRIMARY KEY,
   vendor INT REFERENCES vendors (id) ON DELETE SET NULL,
   receipt_date DATE NOT NULL,
-  total_amount NUMERIC(12, 2),
+  total_amount INTEGER,
   added_by UUID REFERENCES users (id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT NOW ()
 );
@@ -35,7 +35,7 @@ CREATE TABLE if NOT EXISTS expenses (
   receipt_id INT REFERENCES receipts (id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   category TEXT REFERENCES expenses_categories (slug) ON DELETE SET NULL,
-  amount NUMERIC(12, 2) NOT NULL,
+  amount INTEGER NOT NULL,
   added_by UUID REFERENCES users (id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT NOW ()
 );
