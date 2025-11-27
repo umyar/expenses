@@ -37,5 +37,6 @@ CREATE TABLE if NOT EXISTS expenses (
   category TEXT REFERENCES expenses_categories (slug) ON DELETE SET NULL,
   amount INTEGER NOT NULL,
   added_by UUID REFERENCES users (id) ON DELETE SET NULL,
+  expense_date DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMP DEFAULT NOW ()
 );

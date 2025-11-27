@@ -7,6 +7,22 @@ import { gemini } from '@/app/lib/gemini';
 const token = process.env.TELEGRAM_BOT_TOKEN!;
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
+interface IParsedDataItem {
+  name: string;
+  price: number;
+  category: string;
+}
+
+interface IParsedData {
+  totalPrice: number;
+  date: string;
+  itemsList: IParsedDataItem[];
+}
+
+interface IPreparedItem extends Omit<IParsedDataItem, 'price'> {
+  amount: number;
+}
+
 export const pdfHandler = async (ctx: Context) => {
   const { message } = ctx;
 
@@ -76,7 +92,7 @@ export const pdfHandler = async (ctx: Context) => {
   // console.log('🆘 aiResponse.text', aiResponse.text);
 
   const cleanedTextResponse = aiResponse.text?.trim().replace(/```json\n|```/g, '');
-  const parsedData = cleanedTextResponse ? JSON.parse(cleanedTextResponse) : null;
+  const parsedData: IParsedData = cleanedTextResponse ? JSON.parse(cleanedTextResponse) : null;
 
   if (!parsedData) {
     await ctx.reply(`Something went wrong while parsing the response from gemini`);
@@ -95,7 +111,7 @@ export const pdfHandler = async (ctx: Context) => {
   };
   const addedBy = message.from.username!;
 
-  const preparedItems = itemsList.reduce((acc, item) => {
+  const preparedItems: IPreparedItem[] = itemsList.reduce((acc: IPreparedItem[], item) => {
     const { price, category, name } = item;
 
     if (price > 0) {
@@ -111,8 +127,8 @@ export const pdfHandler = async (ctx: Context) => {
     return acc;
   }, []);
 
-  console.log('🆘 itemsList', itemsList);
-  console.log('🆘 preparedItems', preparedItems);
+  // console.log('🆘 itemsList', itemsList);
+  // console.log('🆘 preparedItems', preparedItems);
 
   try {
     await sql.begin(async tx => {
@@ -131,11 +147,13 @@ export const pdfHandler = async (ctx: Context) => {
             category: i.category,
             amount: i.amount,
             receipt_id: receiptId,
+            expense_date: date,
           })),
           'name',
           'category',
           'amount',
           'receipt_id',
+          'expense_date',
         )}
   `;
     });
@@ -152,6 +170,7 @@ const categoriesDictionary: Record<string, string> = {
   rd: 'restaurants-delivery',
   t: 'transportation',
   u: 'utilities',
+  o: 'other',
 };
 
 export const textHandler = async (ctx: Context) => {
