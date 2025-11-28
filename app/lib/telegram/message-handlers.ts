@@ -132,9 +132,13 @@ export const pdfHandler = async (ctx: Context) => {
 
   try {
     await sql.begin(async tx => {
+      const [user] = await tx`
+        SELECT id FROM users WHERE telegram = ${addedBy}
+      `;
+
       const [receipt] = await tx`
         INSERT INTO receipts (vendor, added_by, total_amount, receipt_date)
-        VALUES (${getVendorName()}, (SELECT id FROM users WHERE telegram = ${addedBy}), ${amountInCents}, ${date})
+        VALUES (${getVendorName()}, ${user.id}, ${amountInCents}, ${date})
         RETURNING id
   `;
 
@@ -148,12 +152,14 @@ export const pdfHandler = async (ctx: Context) => {
             amount: i.amount,
             receipt_id: receiptId,
             expense_date: date,
+            added_by: user.id,
           })),
           'name',
           'category',
           'amount',
           'receipt_id',
           'expense_date',
+          'added_by',
         )}
   `;
     });
@@ -194,9 +200,9 @@ export const textHandler = async (ctx: Context) => {
       INSERT INTO expenses (name, amount, category, added_by)
       VALUES (${name}, ${amountInCents}, ${expenseCategory}, (SELECT id FROM users WHERE telegram = ${addedBy}))
     `;
-    await ctx.reply(`✅ Expense handled: ${message.text}`);
+    await ctx.reply(`✅ Expense handled: ${name} | ${amount} | ${expenseCategory}`);
   } catch (e) {
     console.error(e);
-    await ctx.reply(`❗️ERROR while parsing: ${message.text}`);
+    await ctx.reply(`❗️ERROR while parsing: ${name} | ${amount} | ${expenseCategory}`);
   }
 };

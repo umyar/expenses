@@ -1,18 +1,21 @@
 'use client';
 
 import * as React from 'react';
+import { format, subDays, addDays, isAfter, startOfDay } from 'date-fns';
 import {
   ColumnDef,
   ColumnFiltersState,
-  ExpandedState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
   useReactTable,
   VisibilityState,
 } from '@tanstack/react-table';
-import { ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { categoriesDictionary } from '@/app/lib/constants';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -26,83 +29,19 @@ import {
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { getExpensesByDay } from '@/app/lib/actions';
 
-export type ExpenseItem = {
-  id: string;
+export interface IExpense {
+  id: number;
   name: string;
-  category: string;
+  category: string | null;
   amount: number;
-};
+  receipt_id: number | null;
+  expense_date: string;
+  created_at: string;
+}
 
-export type Expense = {
-  id: string;
-  name: string;
-  category: string;
-  amount: number;
-  vendor?: string;
-  items?: ExpenseItem[];
-};
-
-const data: Expense[] = [
-  {
-    id: '1',
-    name: 'Pingo Doce',
-    vendor: 'Pingo Doce',
-    category: 'Food',
-    amount: 15050, // 150.50 EUR in cents
-    items: [
-      { id: '1-1', name: 'Milk Milk Milk Milk Milk Milk Milk', category: 'Food', amount: 250 },
-      { id: '1-2', name: 'Bread', category: 'Food', amount: 120 },
-      { id: '1-3', name: 'Eggs', category: 'Food', amount: 300 },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Gas',
-    category: 'Transportation',
-    amount: 4500, // 45.00 EUR in cents
-  },
-  {
-    id: '3',
-    name: 'Netflix',
-    category: 'Entertainment',
-    amount: 1599, // 15.99 EUR in cents
-  },
-  {
-    id: '4',
-    name: 'Rent',
-    category: 'Housing',
-    amount: 120000, // 1200.00 EUR in cents
-  },
-  {
-    id: '5',
-    name: 'Continente',
-    vendor: 'Continente',
-    category: 'Food',
-    amount: 8750, // 87.50 EUR in cents
-    items: [
-      { id: '5-1', name: 'Chicken', category: 'Food', amount: 1200 },
-      { id: '5-2', name: 'Rice', category: 'Food', amount: 350 },
-      { id: '5-3', name: 'Vegetables', category: 'Food', amount: 6200 },
-    ],
-  },
-];
-
-const columns: ColumnDef<Expense>[] = [
-  {
-    id: 'expander',
-    header: () => null,
-    cell: ({ row }) => {
-      const hasItems = row.original.items && row.original.items.length > 0;
-      if (!hasItems) return null;
-      return (
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => row.toggleExpanded()}>
-          {row.getIsExpanded() ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        </Button>
-      );
-    },
-    enableHiding: false,
-  },
+const columns: ColumnDef<IExpense>[] = [
   {
     accessorKey: 'id',
     header: 'ID',
@@ -113,24 +52,49 @@ const columns: ColumnDef<Expense>[] = [
     accessorKey: 'name',
     header: 'Name',
     cell: ({ row }) => {
-      const expense = row.original;
-      // Use vendor if available, otherwise use name
-      const displayName = expense.vendor || expense.name;
-      return <div className={expense.items ? 'font-medium' : ''}>{displayName}</div>;
+      return <div>{row.getValue('name')}</div>;
     },
   },
   {
     accessorKey: 'category',
     header: 'Category',
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.getValue('category')}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const category = row.getValue('category') as string | null;
+      if (!category) {
+        return <div>N/A</div>;
+      }
+      return (
+        <Badge variant="outline" className="text-muted-foreground px-1.5">
+          {categoriesDictionary[category]}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: 'amount',
-    header: () => <div className="text-right">Amount</div>,
+    header: ({ column }) => {
+      const sortDirection = column.getIsSorted();
+      return (
+        <div className="text-right">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="h-8 hover:bg-transparent"
+          >
+            <div className="flex items-center gap-2">
+              Amount
+              {sortDirection === 'asc' ? (
+                <ArrowUp className="h-4 w-4" />
+              ) : sortDirection === 'desc' ? (
+                <ArrowDown className="h-4 w-4" />
+              ) : (
+                <ArrowUpDown className="h-4 w-4" />
+              )}
+            </div>
+          </Button>
+        </div>
+      );
+    },
     cell: ({ row }) => {
       const amountInCents = parseFloat(row.getValue('amount'));
       const amountInEuros = amountInCents / 100;
@@ -140,6 +104,7 @@ const columns: ColumnDef<Expense>[] = [
       }).format(amountInEuros);
       return <div className="text-right font-medium">{formatted}</div>;
     },
+    enableSorting: true,
   },
   {
     id: 'actions',
@@ -156,7 +121,7 @@ const columns: ColumnDef<Expense>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(expense.id)}>
+            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(String(expense.id))}>
               Copy expense ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -170,20 +135,25 @@ const columns: ColumnDef<Expense>[] = [
 ];
 
 export function DataTable() {
+  const [selectedDay, setSelectedDay] = React.useState<Date>(new Date());
+  const [data, setData] = React.useState<IExpense[]>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
     id: false,
   });
-  const [expanded, setExpanded] = React.useState<ExpandedState>(() => {
-    // Default to expanded for all rows that have items
-    const expandedState: ExpandedState = {};
-    data.forEach((expense, index) => {
-      if (expense.items && expense.items.length > 0) {
-        expandedState[index] = true;
+
+  React.useEffect(() => {
+    async function loadExpenses() {
+      try {
+        const expenses = await getExpensesByDay(selectedDay);
+        setData(expenses);
+      } catch (error) {
+        console.error('Failed to load expenses:', error);
       }
-    });
-    return expandedState;
-  });
+    }
+    loadExpenses();
+  }, [selectedDay]);
 
   const table = useReactTable({
     data,
@@ -192,48 +162,76 @@ export function DataTable() {
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    onExpandedChange: setExpanded,
+    initialState: {
+      pagination: {
+        pageSize: 100,
+      },
+    },
     state: {
       columnFilters,
+      sorting,
       columnVisibility,
-      expanded,
     },
   });
 
+  const today = startOfDay(new Date());
+  const nextDay = addDays(selectedDay, 1);
+  const isNextDayAfterToday = isAfter(startOfDay(nextDay), today);
+
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 gap-8">
+        <div className="flex items-center">
+          <Button variant="outline" size="icon" onClick={() => setSelectedDay(subDays(selectedDay, 1))}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="px-3 py-2 text-sm font-medium min-w-[120px] text-center">
+            {format(selectedDay, 'dd-MM-yyyy')}
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setSelectedDay(addDays(selectedDay, 1))}
+            disabled={isNextDayAfterToday}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
         <Input
           placeholder="Filter by name..."
           value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
           onChange={event => table.getColumn('name')?.setFilterValue(event.target.value)}
           className="max-w-sm"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter(column => column.getCanHide())
-              .map(column => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={value => column.toggleVisibility(!!value)}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2 ml-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Columns <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter(column => column.getCanHide())
+                .map(column => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={value => column.toggleVisibility(!!value)}
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <div className="overflow-hidden rounded-md border">
         <Table>
@@ -242,7 +240,7 @@ export function DataTable() {
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map(header => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className={header.column.id === 'amount' ? 'text-right' : ''}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   );
@@ -253,66 +251,21 @@ export function DataTable() {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map(row => (
-                <React.Fragment key={row.id}>
-                  <TableRow data-state={row.getIsExpanded() && 'expanded'}>
-                    {row.getVisibleCells().map(cell => (
-                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                    ))}
-                  </TableRow>
-                  {row.getIsExpanded() && row.original.items && row.original.items.length > 0 && (
-                    <>
-                      {row.original.items.map(item => (
-                        <TableRow key={item.id} className="bg-muted/50">
-                          {row.getVisibleCells().map((cell, cellIndex) => {
-                            const columnId = cell.column.id;
-
-                            // Handle each column type
-                            if (columnId === 'expander' || columnId === 'id' || columnId === 'actions') {
-                              return <TableCell key={cell.id} />;
-                            }
-
-                            if (columnId === 'name') {
-                              return (
-                                <TableCell key={cell.id} className="pl-6">
-                                  {item.name}
-                                </TableCell>
-                              );
-                            }
-
-                            if (columnId === 'category') {
-                              return (
-                                <TableCell key={cell.id}>
-                                  <Badge variant="outline" className="text-muted-foreground px-1.5">
-                                    {item.category}
-                                  </Badge>
-                                </TableCell>
-                              );
-                            }
-
-                            if (columnId === 'amount') {
-                              const formatted = new Intl.NumberFormat('en-US', {
-                                style: 'currency',
-                                currency: 'EUR',
-                              }).format(item.amount / 100);
-                              return (
-                                <TableCell key={cell.id} className="text-right font-medium">
-                                  {formatted}
-                                </TableCell>
-                              );
-                            }
-
-                            return <TableCell key={cell.id} />;
-                          })}
-                        </TableRow>
-                      ))}
-                    </>
-                  )}
-                </React.Fragment>
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map(cell => (
+                    <TableCell
+                      key={cell.id}
+                      className={cell.column.id === 'amount' ? 'pr-[26px]' : ''}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
+                  No results
                 </TableCell>
               </TableRow>
             )}
@@ -355,4 +308,3 @@ export function DataTableSkeleton() {
     </div>
   );
 }
-
