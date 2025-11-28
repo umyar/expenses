@@ -1,7 +1,7 @@
 'use server';
 
 import { AuthError } from 'next-auth';
-import { fetchExpensesByDate } from '@/app/lib/data';
+import { fetchExpensesByDate, updateExpenseById } from '@/app/lib/data';
 
 import { signIn } from '@/auth';
 
@@ -24,4 +24,21 @@ export async function authenticate(prevState: string | undefined, formData: Form
 export async function getExpensesByDay(day: Date) {
   'use server';
   return await fetchExpensesByDate(day);
+}
+
+type EditExpenseInput = {
+  name: string;
+  category: string;
+  amount: number;
+  expense_date: Date;
+};
+
+export async function editExpense(expenseId: number, data: EditExpenseInput) {
+  'use server';
+  try {
+    await updateExpenseById(expenseId, data);
+  } catch (error) {
+    console.error('Failed to edit expense:', error);
+    throw new Error('Failed to edit expense.');
+  }
 }

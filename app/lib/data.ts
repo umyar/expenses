@@ -58,3 +58,29 @@ export async function fetchMonthSpent(year: number, month: number) {
     throw new Error('Failed to fetch month spent amount.');
   }
 }
+
+type ExpenseUpdateInput = {
+  name: string;
+  category: string;
+  amount: number;
+  expense_date: Date;
+};
+
+export async function updateExpenseById(id: number, data: ExpenseUpdateInput) {
+  try {
+    const [updatedExpense] = await sql<any>`
+      UPDATE expenses
+      SET name = ${data.name},
+          category = ${data.category},
+          amount = ${data.amount},
+          expense_date = DATE(${data.expense_date})
+      WHERE id = ${id}
+      RETURNING *
+    `;
+
+    return updatedExpense;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to update expense.');
+  }
+}

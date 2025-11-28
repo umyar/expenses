@@ -163,10 +163,10 @@ export const pdfHandler = async (ctx: Context) => {
         )}
   `;
     });
-    await ctx.reply(`✅ Receipt handled: ${message.document.file_name}`);
+    await ctx.reply(`✅ ${message.document.file_name}`);
   } catch (e) {
     console.error(e);
-    await ctx.reply(`❗️ERROR while parsing: ${message.document.file_name}`);
+    await ctx.reply(`❗️ERROR with: ${message.document.file_name}`);
   }
 };
 
@@ -177,6 +177,7 @@ const categoriesDictionary: Record<string, string> = {
   t: 'transportation',
   u: 'utilities',
   o: 'other',
+  cs: 'clothes-shoes',
 };
 
 export const textHandler = async (ctx: Context) => {
@@ -200,9 +201,9 @@ export const textHandler = async (ctx: Context) => {
       INSERT INTO expenses (name, amount, category, added_by)
       VALUES (${name}, ${amountInCents}, ${expenseCategory}, (SELECT id FROM users WHERE telegram = ${addedBy}))
     `;
-    await ctx.reply(`✅ Expense handled: ${name} | ${amount} | ${expenseCategory}`);
+    await ctx.reply(`✅ ${name} | ${amount} | ${expenseCategory}`);
   } catch (e) {
     console.error(e);
-    await ctx.reply(`❗️ERROR while parsing: ${name} | ${amount} | ${expenseCategory}`);
+    await ctx.reply(`❗️ERROR with: ${name} | ${amount} | ${expenseCategory}`);
   }
 };

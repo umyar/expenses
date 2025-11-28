@@ -4,5 +4,6 @@ export const categoriesDictionary: Record<string, string> = {
   'restaurants-delivery': 'Restaurants & Delivery',
   transportation: 'Transportation',
   utilities: 'Utilities',
+  'clothes-shoes': 'Clothes & Shoes',
   other: 'Other',
 };
