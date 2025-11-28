@@ -331,6 +331,7 @@ export function DataTable() {
         title="Edit expense"
         description={selectedExpense ? `Update expense #${selectedExpense.id}` : undefined}
         dialogContentClassName="sm:max-w-lg"
+        drawerContentClassName="p-[32px] pt-0"
       >
         {selectedExpense && (
           <div className="py-4">
