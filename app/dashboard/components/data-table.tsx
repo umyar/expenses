@@ -218,7 +218,7 @@ export function DataTable() {
   return (
     <>
       <div className="w-full">
-        <div className="flex items-center py-4 gap-8">
+        <div className="flex flex-wrap items-center py-4 gap-5">
           <div className="flex items-center">
             <Button variant="outline" size="icon" onClick={() => setSelectedDay(subDays(selectedDay, 1))}>
               <ChevronLeft className="h-4 w-4" />
@@ -235,12 +235,14 @@ export function DataTable() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <Input
-            placeholder="Filter by name..."
-            value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
-            onChange={event => table.getColumn('name')?.setFilterValue(event.target.value)}
-            className="max-w-sm"
-          />
+          <div className="min-w-[200px] flex-1">
+            <Input
+              placeholder="Filter by name..."
+              value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+              onChange={event => table.getColumn('name')?.setFilterValue(event.target.value)}
+              className="w-full max-w-sm"
+            />
+          </div>
           <div className="flex items-center gap-2 ml-auto">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

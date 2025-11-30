@@ -22,34 +22,35 @@ import {
 const data = {
   navMain: [
     {
-      title: 'Home',
-      url: '#',
+      title: 'Dashboard',
+      url: '/dashboard',
       items: [
         {
-          title: 'Home Sub 1',
-          url: '#',
-          isActive: true,
+          title: 'Today',
+          url: '/dashboard',
+          isActive: false,
         },
         {
-          title: 'Home Sub 2',
-          url: '#',
+          title: 'Month',
+          url: '/dashboard/month',
+          isActive: false,
         },
       ],
     },
-    {
-      title: 'Receipts',
-      url: '#',
-      items: [
-        {
-          title: 'Receipts Sub 1',
-          url: '#',
-        },
-        {
-          title: 'Receipts Sub 2',
-          url: '#',
-        },
-      ],
-    },
+    // {
+    //   title: 'Receipts',
+    //   url: '#',
+    //   items: [
+    //     {
+    //       title: 'Receipts Sub 1',
+    //       url: '#',
+    //     },
+    //     {
+    //       title: 'Receipts Sub 2',
+    //       url: '#',
+    //     },
+    //   ],
+    // },
   ],
 };
 

@@ -27,18 +27,18 @@ export async function StatsCards() {
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {formatAmount(todaySpent)}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingUp className="size-4" />
-            </Badge>
-          </CardAction>
+          {/*<CardAction>*/}
+          {/*  <Badge variant="outline">*/}
+          {/*    <TrendingUp className="size-4" />*/}
+          {/*  </Badge>*/}
+          {/*</CardAction>*/}
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            <TrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">just text</div>
-        </CardFooter>
+        {/*<CardFooter className="flex-col items-start gap-1.5 text-sm">*/}
+        {/*  <div className="line-clamp-1 flex gap-2 font-medium">*/}
+        {/*    <TrendingUp className="size-4" />*/}
+        {/*  </div>*/}
+        {/*  <div className="text-muted-foreground">just text</div>*/}
+        {/*</CardFooter>*/}
       </Card>
       <Card className="@container/card">
         <CardHeader>
@@ -46,21 +46,21 @@ export async function StatsCards() {
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {formatAmount(monthSpent)}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingUp className="size-4" />
-            </Badge>
-          </CardAction>
+          {/*<CardAction>*/}
+          {/*  <Badge variant="outline">*/}
+          {/*    <TrendingUp className="size-4" />*/}
+          {/*  </Badge>*/}
+          {/*</CardAction>*/}
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            <TrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">just text</div>
-        </CardFooter>
+        {/*<CardFooter className="flex-col items-start gap-1.5 text-sm">*/}
+        {/*  <div className="line-clamp-1 flex gap-2 font-medium">*/}
+        {/*    <TrendingUp className="size-4" />*/}
+        {/*  </div>*/}
+        {/*  <div className="text-muted-foreground">just text</div>*/}
+        {/*</CardFooter>*/}
       </Card>
-      <Card className="@container/card" />
-      <Card className="@container/card" />
+      {/*<Card className="@container/card" />*/}
+      {/*<Card className="@container/card" />*/}
     </div>
   );
 }
@@ -68,10 +68,10 @@ export async function StatsCards() {
 export function StatsCardsSkeleton() {
   return (
     <div className="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Skeleton className="h-[180px] w-full rounded-xl" />
-      <Skeleton className="h-[180px] w-full rounded-xl" />
-      <Skeleton className="h-[180px] w-full rounded-xl" />
-      <Skeleton className="h-[180px] w-full rounded-xl" />
+      <Skeleton className="h-[110px] w-full rounded-xl" />
+      <Skeleton className="h-[110px] w-full rounded-xl" />
+      {/*<Skeleton className="h-[110px] w-full rounded-xl" />*/}
+      {/*<Skeleton className="h-[110px] w-full rounded-xl" />*/}
     </div>
   );
 }
