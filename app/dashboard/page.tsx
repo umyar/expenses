@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+
 import { StatsCards, StatsCardsSkeleton } from './components/stats-cards';
 import { DataTable, DataTableSkeleton } from './components/data-table';
 

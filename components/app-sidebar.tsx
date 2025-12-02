@@ -31,8 +31,8 @@ const data = {
           isActive: false,
         },
         {
-          title: 'Month',
-          url: '/dashboard/month',
+          title: 'By Months',
+          url: '/dashboard/by-months',
           isActive: false,
         },
       ],
