@@ -28,6 +28,8 @@ const chartColors = [
   'var(--chart-10)',
 ];
 
+export const dynamic = 'force-dynamic';
+
 export function MonthlyCharts({ data }: MonthlyChartsProps) {
   // Group data by year-month, then by category
   const groupedByMonth = data.reduce(
