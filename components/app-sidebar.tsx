@@ -13,11 +13,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
+import { SidebarSubmenu } from '@/components/sidebar-submenu';
 
 const data = {
   navMain: [
@@ -28,29 +26,13 @@ const data = {
         {
           title: 'Today',
           url: '/dashboard',
-          isActive: false,
         },
         {
           title: 'By Months',
           url: '/dashboard/by-months',
-          isActive: false,
         },
       ],
     },
-    // {
-    //   title: 'Receipts',
-    //   url: '#',
-    //   items: [
-    //     {
-    //       title: 'Receipts Sub 1',
-    //       url: '#',
-    //     },
-    //     {
-    //       title: 'Receipts Sub 2',
-    //       url: '#',
-    //     },
-    //   ],
-    // },
   ],
 };
 
@@ -61,14 +43,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
+              <a href="/">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Wallet className="size-4" />
+                  <Wallet className="size-5" />
                 </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">Expenses</span>
-                  <span className="">management</span>
-                </div>
+                <span className="font-extralight text-3xl">EXPENSES</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -84,17 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     {item.title}
                   </a>
                 </SidebarMenuButton>
-                {item.items?.length ? (
-                  <SidebarMenuSub>
-                    {item.items.map(item => (
-                      <SidebarMenuSubItem key={item.title}>
-                        <SidebarMenuSubButton asChild isActive={item.isActive}>
-                          <a href={item.url}>{item.title}</a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                ) : null}
+                {item.items?.length ? <SidebarSubmenu items={item.items} /> : null}
               </SidebarMenuItem>
             ))}
           </SidebarMenu>

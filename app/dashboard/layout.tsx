@@ -5,11 +5,11 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { DynamicBreadcrumb } from '@/components/dynamic-breadcrumb';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Today</BreadcrumbPage>
+                  <DynamicBreadcrumb />
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

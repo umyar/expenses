@@ -66,29 +66,50 @@ export type MonthlyCategoryTotalT = {
   total: number;
 };
 
-export async function fetchMonthlyTotalsByCategories(startYear: number, startMonth: number) {
+export async function fetchMonthlyTotalsByCategories(lastNMonths: number) {
   try {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
+    if (lastNMonths === Infinity) {
+      return await sql<MonthlyCategoryTotalT[]>`
+        SELECT
+          EXTRACT(YEAR FROM expense_date)::INTEGER AS year,
+          EXTRACT(MONTH FROM expense_date)::INTEGER AS month,
+          COALESCE(category, 'other') AS category,
+          SUM(amount)::INTEGER AS total
+        FROM expenses
+        GROUP BY
+         EXTRACT(YEAR FROM expense_date),
+         EXTRACT(MONTH FROM expense_date),
+         COALESCE(category, 'other')
+        ORDER BY year DESC, month DESC, category;
+      `;
+    } else {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
 
-    const startDate = `${startYear}-${String(startMonth).padStart(2, '0')}-01`;
-    const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+      const startDateObj = new Date(currentYear, currentMonth - lastNMonths, 1);
+      const startYear = startDateObj.getFullYear();
+      const startMonth = startDateObj.getMonth() + 1;
 
-    const data = await sql<MonthlyCategoryTotalT[]>`
-      SELECT
-        EXTRACT(YEAR FROM expense_date)::INTEGER AS year,
-        EXTRACT(MONTH FROM expense_date)::INTEGER AS month,
-        COALESCE(category, 'other') AS category,
-        SUM(amount)::INTEGER AS total
-      FROM expenses
-      WHERE expense_date >= ${startDate}::date
-        AND expense_date < (${endDate}::date + interval '1 month')
-      GROUP BY year, month, category
-      ORDER BY year, month, category
-    `;
+      const startDate = `${startYear}-${String(startMonth).padStart(2, '0')}-01`;
+      const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
 
-    return data;
+      return await sql<MonthlyCategoryTotalT[]>`
+        SELECT
+          EXTRACT(YEAR FROM expense_date)::INTEGER AS year,
+          EXTRACT(MONTH FROM expense_date)::INTEGER AS month,
+          COALESCE(category, 'other') AS category,
+          SUM(amount)::INTEGER AS total
+        FROM expenses
+        WHERE expense_date >= ${startDate}::date
+          AND expense_date < (${endDate}::date + interval '1 month')
+        GROUP BY
+          EXTRACT(YEAR FROM expense_date),
+          EXTRACT(MONTH FROM expense_date),
+          COALESCE(category, 'other')
+        ORDER BY year DESC, month DESC, category;
+      `;
+    }
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch monthly totals by categories.');
