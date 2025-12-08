@@ -86,6 +86,7 @@ export const pdfHandler = async (ctx: Context) => {
     },
   };
 
+  console.log('🆘🆘🆘 pdfHandler called 🆘🆘🆘');
   const aiResponse = await gemini(contents, config);
 
   // console.log('🆘 aiResponse', aiResponse);
