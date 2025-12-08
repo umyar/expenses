@@ -4,8 +4,6 @@ import { Card, CardHeader, CardDescription, CardTitle, CardAction, CardFooter } 
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchTodaySpent, fetchMonthSpent } from '@/app/lib/data';
 
-export const dynamic = 'force-dynamic';
-
 export async function StatsCards() {
   const today = new Date();
   const [todaySpent, monthSpent] = await Promise.all([
