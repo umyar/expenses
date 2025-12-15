@@ -1,11 +1,14 @@
 'use client';
 
-import { format } from 'date-fns';
+import { appRoutes } from '@/components/constants';
+import { Button } from '@/components/ui/button';
+import { format, parse } from 'date-fns';
+import { useRouter } from 'next/navigation';
 import { PieChart, Pie, LabelList } from 'recharts';
 
 import { MonthlyCategoryTotalT } from '@/app/lib/data';
 import { categoriesDictionary } from '@/app/lib/constants';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 
 type MonthlyData = MonthlyCategoryTotalT[];
@@ -29,11 +32,14 @@ const chartColors = [
 ];
 
 export function MonthlyCharts({ data }: MonthlyChartsProps) {
+  const router = useRouter();
+
   // Group data by year-month, then by category
   const groupedByMonth = data.reduce(
     (acc, item) => {
       const date = new Date(item.year, item.month - 1);
-      const monthKey = format(date, 'MMMM yyyy');
+      const monthKey = format(date, 'MM-yyyy');
+
       if (!acc[monthKey]) {
         acc[monthKey] = {};
       }
@@ -63,7 +69,10 @@ export function MonthlyCharts({ data }: MonthlyChartsProps) {
         config[category] = { label: category };
       });
 
+      const monthTitle = format(parse(monthKey, 'MM-yyyy', new Date()), 'MMMM yyyy');
+
       return {
+        monthTitle,
         monthKey,
         chartItems,
         total,
@@ -72,19 +81,30 @@ export function MonthlyCharts({ data }: MonthlyChartsProps) {
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 
+  const openDetailedView = (date: string) => {
+    const params = new URLSearchParams();
+    params.set('month', date);
+
+    router.push(`${appRoutes.monthly.route}?${params.toString()}`);
+  };
+
   return (
     <div className="grid auto-rows-min gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))' }}>
-      {chartData.map(({ monthKey, chartItems, total, config }) => (
+      {chartData.map(({ monthKey, monthTitle, chartItems, total, config }) => (
         <Card key={monthKey} className="gap-1">
           <CardHeader className="gap-0">
-            <CardTitle className="text-sm font-normal">{monthKey}</CardTitle>
+            <CardTitle className="text-sm font-normal">{monthTitle}</CardTitle>
             <CardDescription className="font-bold text-2xl text-foreground">€ {total.toFixed(2)}</CardDescription>
+            <CardAction>
+              <Button variant="outline" size="sm" onClick={() => openDetailedView(monthKey)}>
+                Detailed view
+              </Button>
+            </CardAction>
           </CardHeader>
           <CardContent>
             {chartItems.length > 0 ? (
               <ChartContainer config={config} className="h-[300px] w-full">
                 <PieChart>
-                  {/*<ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />*/}
                   <Pie
                     data={chartItems}
                     dataKey="value"

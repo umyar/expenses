@@ -8,7 +8,7 @@ export const MonthsToggle = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const currentPage = searchParams.get('months') || '1';
+  const currentPage = searchParams.get('months') || '3';
 
   const changeUrl = (value: string) => {
     const params = new URLSearchParams(searchParams);
@@ -21,7 +21,6 @@ export const MonthsToggle = () => {
     <div className="flex gap-4 items-center text-neutral-500">
       <span className="text-sm">Months:</span>
       <ToggleGroup type="single" value={currentPage} onValueChange={changeUrl} variant="outline">
-        <ToggleGroupItem value="1">Current</ToggleGroupItem>
         <ToggleGroupItem value="3">Last 3</ToggleGroupItem>
         <ToggleGroupItem value="6">Last 6</ToggleGroupItem>
         <ToggleGroupItem value="all">All</ToggleGroupItem>

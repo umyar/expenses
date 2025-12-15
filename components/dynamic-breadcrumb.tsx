@@ -1,12 +1,16 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+
+import { appRoutes } from '@/components/constants';
 import { BreadcrumbPage } from '@/components/ui/breadcrumb';
 
-const routeMap: Record<string, string> = {
-  '/dashboard': 'Today',
-  '/dashboard/by-months': 'By Months',
-};
+const routeMap: Record<string, string> = Object.values(appRoutes).reduce((acc, currentPage) => {
+  // @ts-ignore
+  acc[currentPage.route] = currentPage.title;
+
+  return acc;
+}, {});
 
 export function DynamicBreadcrumb() {
   const pathname = usePathname();
@@ -14,4 +18,3 @@ export function DynamicBreadcrumb() {
 
   return <BreadcrumbPage>{pageName}</BreadcrumbPage>;
 }
-

@@ -1,6 +1,8 @@
 import * as React from 'react';
-import { Button } from '@/components/ui/button';
 import { PowerIcon, Wallet } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { appRoutes } from '@/components/constants';
 
 import { signOut } from '@/auth';
 
@@ -17,21 +19,14 @@ import {
 } from '@/components/ui/sidebar';
 import { SidebarSubmenu } from '@/components/sidebar-submenu';
 
+const dashboardItems = Object.values(appRoutes).map(({ title, route }) => ({ title, url: route }));
+
 const data = {
   navMain: [
     {
       title: 'Dashboard',
-      url: '/dashboard',
-      items: [
-        {
-          title: 'Today',
-          url: '/dashboard',
-        },
-        {
-          title: 'By Months',
-          url: '/dashboard/by-months',
-        },
-      ],
+      url: appRoutes.dashboard.route,
+      items: dashboardItems,
     },
   ],
 };
