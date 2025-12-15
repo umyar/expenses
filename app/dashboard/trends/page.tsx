@@ -1,4 +1,4 @@
-import { fetchMonthlyTotalsByCategories } from '@/app/lib/data';
+import { fetchNMonthsTotalsByCategories } from '@/app/lib/data';
 import { MonthlyCharts } from './components/monthly-charts';
 import { MonthsToggle } from './components/months-toggle';
 
@@ -12,9 +12,9 @@ interface IMonthsPageProps {
 
 export default async function ByMonthsPage({ searchParams }: IMonthsPageProps) {
   const receivedSearchParams = await searchParams;
-  const selectedMonths = receivedSearchParams?.months === 'all' ? Infinity : Number(receivedSearchParams?.months) || 1;
+  const selectedMonths = receivedSearchParams?.months === 'all' ? Infinity : Number(receivedSearchParams?.months) || 3;
 
-  const data = await fetchMonthlyTotalsByCategories(selectedMonths);
+  const data = await fetchNMonthsTotalsByCategories(selectedMonths);
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">

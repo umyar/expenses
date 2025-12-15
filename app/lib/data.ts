@@ -66,7 +66,30 @@ export type MonthlyCategoryTotalT = {
   total: number;
 };
 
-export async function fetchMonthlyTotalsByCategories(lastNMonths: number) {
+export async function fetchMonthlyTotalsByCategories(year: number, month: number) {
+  try {
+    return await sql<MonthlyCategoryTotalT[]>`
+      SELECT
+        EXTRACT(YEAR FROM expense_date)::INTEGER AS year,
+        EXTRACT(MONTH FROM expense_date)::INTEGER AS month,
+        COALESCE(category, 'other') AS category,
+        SUM(amount)::INTEGER AS total
+      FROM expenses
+      WHERE EXTRACT(YEAR FROM expense_date) = ${year}
+        AND EXTRACT(MONTH FROM expense_date) = ${month}
+      GROUP BY
+        EXTRACT(YEAR FROM expense_date),
+        EXTRACT(MONTH FROM expense_date),
+        COALESCE(category, 'other')
+      ORDER BY category;
+    `;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch monthly totals by categories.');
+  }
+}
+
+export async function fetchNMonthsTotalsByCategories(lastNMonths: number) {
   try {
     if (lastNMonths === Infinity) {
       return await sql<MonthlyCategoryTotalT[]>`

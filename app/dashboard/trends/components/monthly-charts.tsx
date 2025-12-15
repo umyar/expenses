@@ -13,7 +13,7 @@ import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 
 type MonthlyData = MonthlyCategoryTotalT[];
 
-interface MonthlyChartsProps {
+interface IMonthlyChartsProps {
   data: MonthlyData;
 }
 
@@ -31,7 +31,7 @@ const chartColors = [
   'var(--chart-10)',
 ];
 
-export function MonthlyCharts({ data }: MonthlyChartsProps) {
+export function MonthlyCharts({ data }: IMonthlyChartsProps) {
   const router = useRouter();
 
   // Group data by year-month, then by category
@@ -43,10 +43,11 @@ export function MonthlyCharts({ data }: MonthlyChartsProps) {
       if (!acc[monthKey]) {
         acc[monthKey] = {};
       }
+
       if (!acc[monthKey][item.category]) {
-        acc[monthKey][item.category] = 0;
+        acc[monthKey][item.category] = item.total;
       }
-      acc[monthKey][item.category] += item.total;
+
       return acc;
     },
     {} as Record<string, Record<string, number>>,
