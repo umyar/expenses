@@ -1,5 +1,6 @@
 import { parse, getYear, getMonth, isValid } from 'date-fns';
 
+import { MonthSelector } from '@/app/dashboard/monthly/components/month-selector';
 import { fetchMonthlyTotalsByCategories } from '@/app/lib/data';
 import { MonthlyChart } from './components/monthly-chart';
 
@@ -27,6 +28,7 @@ export default async function ByMonthsPage({ searchParams }: IMonthsPageProps) {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
+      <MonthSelector defaultMonth={`${month}-${year}`} />
       <MonthlyChart data={data} />
     </div>
   );
