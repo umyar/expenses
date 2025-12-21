@@ -33,7 +33,7 @@ export function MonthlyChart({ data }: IMonthlyChartProps) {
   });
 
   return (
-    <div className="grid auto-rows-min gap-4">
+    <div>
       <Card className="gap-1">
         <CardHeader className="gap-0">
           <CardTitle className="text-sm font-normal">{monthTitle}</CardTitle>

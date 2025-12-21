@@ -28,6 +28,31 @@ export async function fetchExpensesByDate(date: Date) {
   }
 }
 
+export async function fetchExpensesForSelectedMonth(
+  year: number,
+  month: number,
+  page: number = 1,
+  pageSize: number = 15
+) {
+  try {
+    const offset = (page - 1) * pageSize;
+    
+    const data = await sql<any>`
+      SELECT * FROM expenses 
+      WHERE EXTRACT(YEAR FROM expense_date) = ${year}
+        AND EXTRACT(MONTH FROM expense_date) = ${month}
+      ORDER BY created_at DESC
+      LIMIT ${pageSize}
+      OFFSET ${offset}
+    `;
+
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch expenses for selected month.');
+  }
+}
+
 export async function fetchTodaySpent(date: Date) {
   try {
     const result = await sql<[{ sum: number | null }]>`

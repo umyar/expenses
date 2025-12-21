@@ -44,7 +44,7 @@ export const pdfHandler = async (ctx: Context) => {
 
   const contents = [
     {
-      text: 'Parse this receipt and give me the list of bought items. Also add the category for each item. It might be one of 2 categories: groceries or other. To other goes everything what cannot be eaten or drunk. Name for each item should be translated to Russian and original Portuguese name from the receipt should be given in parentheses. Also give a total price and date from the receipt in YYYY-MM-DD format.',
+      text: 'Parse this receipt and give me the list of bought items. Also add the category for each item. It might be one of 2 categories: groceries or other. To other goes everything what cannot be eaten or drunk. Name for each item should be translated to Russian and original Portuguese name from the receipt should be given in parentheses. Do not deduct discounts. Also give a total price and date from the receipt in YYYY-MM-DD format.',
     },
     {
       inlineData: {
@@ -86,7 +86,6 @@ export const pdfHandler = async (ctx: Context) => {
     },
   };
 
-  console.log('🆘🆘🆘 pdfHandler called 🆘🆘🆘');
   const aiResponse = await gemini(contents, config);
 
   // console.log('🆘 aiResponse', aiResponse);
@@ -100,7 +99,7 @@ export const pdfHandler = async (ctx: Context) => {
   }
 
   const { totalPrice, date, itemsList } = parsedData;
-  const amountInCents = Math.floor(totalPrice * 100);
+  const receiptAmountInCents = Math.floor(totalPrice * 100);
   const getVendorName = () => {
     const fileName = message.document!.file_name;
 
@@ -112,11 +111,14 @@ export const pdfHandler = async (ctx: Context) => {
   };
   const addedBy = message.from.username!;
 
+  let itemsSumForTotalPriceCheck = 0;
+
   const preparedItems: IPreparedItem[] = itemsList.reduce((acc: IPreparedItem[], item) => {
     const { price, category, name } = item;
 
     if (price > 0) {
       const priceInCents = Math.floor(item.price * 100);
+      itemsSumForTotalPriceCheck += priceInCents;
 
       acc.push({
         name,
@@ -127,6 +129,11 @@ export const pdfHandler = async (ctx: Context) => {
 
     return acc;
   }, []);
+
+  if (itemsSumForTotalPriceCheck !== receiptAmountInCents) {
+    await ctx.reply(`❗️ERROR with ${message.document.file_name} while checking sums`);
+    return;
+  }
 
   // console.log('🆘 itemsList', itemsList);
   // console.log('🆘 preparedItems', preparedItems);
@@ -139,7 +146,7 @@ export const pdfHandler = async (ctx: Context) => {
 
       const [receipt] = await tx`
         INSERT INTO receipts (vendor, added_by, total_amount, receipt_date)
-        VALUES (${getVendorName()}, ${user.id}, ${amountInCents}, ${date})
+        VALUES (${getVendorName()}, ${user.id}, ${receiptAmountInCents}, ${date})
         RETURNING id
   `;
 
@@ -167,7 +174,7 @@ export const pdfHandler = async (ctx: Context) => {
     await ctx.reply(`✅ ${message.document.file_name}`);
   } catch (e) {
     console.error(e);
-    await ctx.reply(`❗️ERROR with: ${message.document.file_name}`);
+    await ctx.reply(`❗️SQL ERROR with ${message.document.file_name}`);
   }
 };
 
