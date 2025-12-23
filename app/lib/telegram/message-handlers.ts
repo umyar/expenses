@@ -111,14 +111,14 @@ export const pdfHandler = async (ctx: Context) => {
   };
   const addedBy = message.from.username!;
 
-  let itemsSumForTotalPriceCheck = 0;
+  let itemsCentsSum = 0;
 
   const preparedItems: IPreparedItem[] = itemsList.reduce((acc: IPreparedItem[], item) => {
     const { price, category, name } = item;
 
     if (price > 0) {
       const priceInCents = Math.floor(item.price * 100);
-      itemsSumForTotalPriceCheck += priceInCents;
+      itemsCentsSum += priceInCents;
 
       acc.push({
         name,
@@ -130,7 +130,8 @@ export const pdfHandler = async (ctx: Context) => {
     return acc;
   }, []);
 
-  if (itemsSumForTotalPriceCheck !== receiptAmountInCents) {
+  if (itemsCentsSum !== receiptAmountInCents) {
+    console.log('❗️Not equal:', { itemsSum: itemsCentsSum, receiptAmount: receiptAmountInCents });
     await ctx.reply(`❗️ERROR with ${message.document.file_name} while checking sums`);
     return;
   }
