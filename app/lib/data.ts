@@ -28,25 +28,78 @@ export async function fetchExpensesByDate(date: Date) {
   }
 }
 
-export async function fetchExpensesForSelectedMonth(
-  year: number,
-  month: number,
-  page: number = 1,
-  pageSize: number = 15
-) {
+export type FetchExpensesForSelectedMonthParams = {
+  year: number;
+  month: number;
+  page?: number;
+  pageSize?: number;
+  category?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+};
+
+export async function fetchExpensesForSelectedMonth({
+  year,
+  month,
+  page = 1,
+  pageSize = 15,
+  category,
+  sortBy = 'amount',
+  sortOrder = 'desc',
+}: FetchExpensesForSelectedMonthParams) {
   try {
     const offset = (page - 1) * pageSize;
     
-    const data = await sql<any>`
-      SELECT * FROM expenses 
-      WHERE EXTRACT(YEAR FROM expense_date) = ${year}
-        AND EXTRACT(MONTH FROM expense_date) = ${month}
-      ORDER BY created_at DESC
-      LIMIT ${pageSize}
-      OFFSET ${offset}
-    `;
+    // Validate sortBy to prevent SQL injection
+    const validSortColumns = ['amount', 'expense_date', 'created_at', 'name', 'category'];
+    const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'amount';
+    const safeSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    
+    // Build ORDER BY clause - column name is safe because it's validated against whitelist
+    const orderBy = `${safeSortBy} ${safeSortOrder}`;
+    
+    // Use sql.unsafe with proper parameterization for values, validated column name in ORDER BY
+    const [data, countResult] = await Promise.all([
+      category
+        ? sql.unsafe<any>(
+            `SELECT * FROM expenses 
+             WHERE EXTRACT(YEAR FROM expense_date) = ${year}
+               AND EXTRACT(MONTH FROM expense_date) = ${month}
+               AND category = '${category.replace(/'/g, "''")}'
+             ORDER BY ${orderBy}
+             LIMIT ${pageSize}
+             OFFSET ${offset}`
+          )
+        : sql.unsafe<any>(
+            `SELECT * FROM expenses 
+             WHERE EXTRACT(YEAR FROM expense_date) = ${year}
+               AND EXTRACT(MONTH FROM expense_date) = ${month}
+             ORDER BY ${orderBy}
+             LIMIT ${pageSize}
+             OFFSET ${offset}`
+          ),
+      category
+        ? sql<[{ count: string }]>`
+            SELECT COUNT(*) as count FROM expenses 
+            WHERE EXTRACT(YEAR FROM expense_date) = ${year}
+              AND EXTRACT(MONTH FROM expense_date) = ${month}
+              AND category = ${category}
+          `
+        : sql<[{ count: string }]>`
+            SELECT COUNT(*) as count FROM expenses 
+            WHERE EXTRACT(YEAR FROM expense_date) = ${year}
+              AND EXTRACT(MONTH FROM expense_date) = ${month}
+          `
+    ]);
 
-    return data;
+    const total = parseInt(countResult[0]?.count || '0', 10);
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+    };
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch expenses for selected month.');

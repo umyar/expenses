@@ -1,24 +1,20 @@
 'use client';
 
 import * as React from 'react';
-import { format, subDays, addDays, isAfter, startOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import {
   ColumnDef,
-  ColumnFiltersState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   SortingState,
   useReactTable,
   VisibilityState,
 } from '@tanstack/react-table';
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, MoreHorizontal } from 'lucide-react';
 
+import { IExpense } from '@/app/types';
 import { categoriesDictionary } from '@/app/lib/constants';
 import { Button } from '@/components/ui/button';
-import { IExpense } from '@/app/types';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -28,12 +24,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { getExpensesByDay, editExpense } from '@/app/lib/actions';
+import { getExpensesForMonth, editExpense } from '@/app/lib/actions';
 import { DrawerDialog } from '@/components/drawer-dialog';
 import { EditForm } from '@/components/expenses/edit-form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Label } from '@/components/ui/label';
+
+const pageSize = 15;
 
 const createColumns = (handleOpenEdit: (expense: IExpense) => void): ColumnDef<IExpense>[] => [
   {
@@ -48,6 +49,35 @@ const createColumns = (handleOpenEdit: (expense: IExpense) => void): ColumnDef<I
     cell: ({ row }) => {
       return <div>{row.getValue('name')}</div>;
     },
+  },
+  {
+    accessorKey: 'expense_date',
+    header: ({ column }) => {
+      const sortDirection = column.getIsSorted();
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="h-8 hover:bg-transparent"
+        >
+          <div className="flex items-center gap-2">
+            Date
+            {sortDirection === 'asc' ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : sortDirection === 'desc' ? (
+              <ArrowDown className="h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="h-4 w-4" />
+            )}
+          </div>
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const date = new Date(row.getValue('expense_date'));
+      return <div>{format(date, 'MMMM d')}</div>;
+    },
+    enableSorting: true,
   },
   {
     accessorKey: 'category',
@@ -128,30 +158,58 @@ const createColumns = (handleOpenEdit: (expense: IExpense) => void): ColumnDef<I
   },
 ];
 
-export function DataTable() {
-  const [selectedDay, setSelectedDay] = React.useState<Date>(new Date());
+interface MonthlyTableProps {
+  year: number;
+  month: number;
+}
+
+export function MonthlyTable({ year, month }: MonthlyTableProps) {
   const [data, setData] = React.useState<IExpense[]>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([{ id: 'amount', desc: true }]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
     id: false,
   });
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [selectedExpense, setSelectedExpense] = React.useState<IExpense | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [page, setPage] = React.useState(1);
+  const [total, setTotal] = React.useState(0);
+  const [categoryFilter, setCategoryFilter] = React.useState<string | undefined>(undefined);
+
+  const isMobile = useIsMobile();
 
   const loadExpenses = React.useCallback(async () => {
+    setIsLoading(true);
     try {
-      const expenses = await getExpensesByDay(selectedDay);
-      setData(expenses);
+      const sortBy = sorting[0]?.id || 'amount';
+      const sortOrder = sorting[0]?.desc ? 'desc' : 'asc';
+      const result = await getExpensesForMonth({
+        year,
+        month,
+        page,
+        pageSize,
+        category: categoryFilter,
+        sortBy,
+        sortOrder,
+      });
+      setData(result.data);
+      setTotal(result.total);
     } catch (error) {
       console.error('Failed to load expenses:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [selectedDay]);
+  }, [year, month, page, pageSize, categoryFilter, sorting]);
 
   React.useEffect(() => {
     loadExpenses();
   }, [loadExpenses]);
+
+  // Reset to page 1 when year, month, category, or sorting changes
+  React.useEffect(() => {
+    setPage(1);
+  }, [year, month, categoryFilter, sorting]);
 
   const handleOpenEdit = React.useCallback((expense: IExpense) => {
     setSelectedExpense(expense);
@@ -163,28 +221,27 @@ export function DataTable() {
   const table = useReactTable({
     data,
     columns,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
+    manualPagination: true,
+    manualSorting: true,
+    pageCount: Math.ceil(total / pageSize),
     initialState: {
       pagination: {
-        pageSize: 100,
+        pageSize,
       },
+      sorting: [{ id: 'amount', desc: true }],
     },
     state: {
-      columnFilters,
       sorting,
       columnVisibility,
+      pagination: {
+        pageIndex: page - 1,
+        pageSize,
+      },
     },
   });
-
-  const today = startOfDay(new Date());
-  const nextDay = addDays(selectedDay, 1);
-  const isNextDayAfterToday = isAfter(startOfDay(nextDay), today);
 
   const handleEditSubmit = React.useCallback(
     async (formData: { name: string; category: string; amount: number; expense_date: Date }) => {
@@ -207,33 +264,50 @@ export function DataTable() {
     [loadExpenses, selectedExpense],
   );
 
+  const categoryFilterValue = categoryFilter ?? 'all';
+  const categoryOptions = [
+    { value: 'all', label: 'All Categories' },
+    ...Object.entries(categoriesDictionary).map(([key, label]) => ({ value: key, label })),
+  ];
+
+  const handleCategoryFilterChange = React.useCallback((value: string) => {
+    setCategoryFilter(value === 'all' ? undefined : value);
+  }, []);
+
   return (
     <>
       <div className="w-full">
         <div className="flex flex-wrap items-center py-4 gap-5">
-          <div className="flex items-center">
-            <Button variant="outline" size="icon" onClick={() => setSelectedDay(subDays(selectedDay, 1))}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="px-3 py-2 text-sm font-medium min-w-[120px] text-center">
-              {format(selectedDay, 'dd-MM-yyyy')}
-            </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setSelectedDay(addDays(selectedDay, 1))}
-              disabled={isNextDayAfterToday}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="min-w-[200px] flex-1">
-            <Input
-              placeholder="Filter by name..."
-              value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
-              onChange={event => table.getColumn('name')?.setFilterValue(event.target.value)}
-              className="w-full max-w-sm"
-            />
+          <div className="min-w-[200px] flex-1 flex items-center gap-2">
+            <Label htmlFor="category-select">Category:</Label>
+            {isMobile ? (
+              <NativeSelect
+                id="category-select"
+                value={categoryFilterValue}
+                onChange={e => {
+                  handleCategoryFilterChange(e.target.value);
+                }}
+              >
+                {categoryOptions.map(option => (
+                  <NativeSelectOption key={option.value} value={option.value}>
+                    {option.label}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            ) : (
+              <Select value={categoryFilterValue} onValueChange={handleCategoryFilterChange}>
+                <SelectTrigger id="category-select" className="w-[200px]">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoryOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="flex items-center gap-2 ml-auto">
             <DropdownMenu>
@@ -278,14 +352,28 @@ export function DataTable() {
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    Loading...
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map(row => (
                   <TableRow key={row.id}>
-                    {row.getVisibleCells().map(cell => (
-                      <TableCell key={cell.id} className={cell.column.id === 'amount' ? 'pr-[26px]' : ''}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
+                    {row.getVisibleCells().map(cell => {
+                      const cellClassName =
+                        cell.column.id === 'amount'
+                          ? 'pr-[26px]'
+                          : cell.column.id === 'expense_date'
+                            ? 'pl-[26px]'
+                            : '';
+                      return (
+                        <TableCell key={cell.id} className={cellClassName}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))
               ) : (
@@ -299,16 +387,34 @@ export function DataTable() {
           </Table>
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
+          <div className="text-sm text-muted-foreground">
+            Page {page} of {Math.ceil(total / pageSize) || 1}
+          </div>
           <div className="space-x-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
+              onClick={() => {
+                const newPage = page - 1;
+                if (newPage >= 1) {
+                  setPage(newPage);
+                }
+              }}
+              disabled={page <= 1}
             >
               Previous
             </Button>
-            <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const newPage = page + 1;
+                if (newPage <= Math.ceil(total / pageSize)) {
+                  setPage(newPage);
+                }
+              }}
+              disabled={page >= Math.ceil(total / pageSize)}
+            >
               Next
             </Button>
           </div>
@@ -343,23 +449,5 @@ export function DataTable() {
         )}
       </DrawerDialog>
     </>
-  );
-}
-
-export function DataTableSkeleton() {
-  return (
-    <div className="w-full">
-      <div className="flex items-center py-4">
-        <div className="h-10 w-64 rounded-md bg-muted animate-pulse" />
-        <div className="ml-auto h-10 w-24 rounded-md bg-muted animate-pulse" />
-      </div>
-      <div className="overflow-hidden rounded-md border">
-        <div className="space-y-2 p-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-12 w-full rounded-md bg-muted animate-pulse" />
-          ))}
-        </div>
-      </div>
-    </div>
   );
 }

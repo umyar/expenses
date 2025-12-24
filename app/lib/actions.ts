@@ -1,7 +1,12 @@
 'use server';
 
 import { AuthError } from 'next-auth';
-import { fetchExpensesByDate, updateExpenseById } from '@/app/lib/data';
+import {
+  fetchExpensesByDate,
+  updateExpenseById,
+  fetchExpensesForSelectedMonth,
+  type FetchExpensesForSelectedMonthParams,
+} from '@/app/lib/data';
 
 import { signIn } from '@/auth';
 
@@ -41,4 +46,9 @@ export async function editExpense(expenseId: number, data: EditExpenseInput) {
     console.error('Failed to edit expense:', error);
     throw new Error('Failed to edit expense.');
   }
+}
+
+export async function getExpensesForMonth(params: FetchExpensesForSelectedMonthParams) {
+  'use server';
+  return await fetchExpensesForSelectedMonth(params);
 }
