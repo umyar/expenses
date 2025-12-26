@@ -6,6 +6,9 @@ import {
   updateExpenseById,
   fetchExpensesForSelectedMonth,
   type FetchExpensesForSelectedMonthParams,
+  fetchReceipts,
+  type FetchReceiptsParams,
+  updateReceiptById,
 } from '@/app/lib/data';
 
 import { signIn } from '@/auth';
@@ -51,4 +54,24 @@ export async function editExpense(expenseId: number, data: EditExpenseInput) {
 export async function getExpensesForMonth(params: FetchExpensesForSelectedMonthParams) {
   'use server';
   return await fetchExpensesForSelectedMonth(params);
+}
+
+export async function getReceipts(params: FetchReceiptsParams = {}) {
+  'use server';
+  return await fetchReceipts(params);
+}
+
+type EditReceiptInput = {
+  receipt_date: Date;
+  total_amount: number | null;
+};
+
+export async function editReceipt(receiptId: number, data: EditReceiptInput) {
+  'use server';
+  try {
+    await updateReceiptById(receiptId, data);
+  } catch (error) {
+    console.error('Failed to edit receipt:', error);
+    throw new Error('Failed to edit receipt.');
+  }
 }

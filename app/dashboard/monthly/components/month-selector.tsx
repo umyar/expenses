@@ -16,7 +16,6 @@ export function MonthSelector({ defaultMonth }: MonthSelectorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const currentPage = searchParams.get('month') || defaultMonth;
 
   const changeUrl = (value: string) => {
     const params = new URLSearchParams(searchParams);

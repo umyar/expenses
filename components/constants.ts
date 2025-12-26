@@ -16,6 +16,10 @@ export const appRoutes: Record<string, IPageMeta> = {
     route: '/dashboard/trends',
     title: 'Trends',
   },
+  receipts: {
+    route: '/dashboard/receipts',
+    title: 'Receipts',
+  },
 };
 
 export const chartColors = [

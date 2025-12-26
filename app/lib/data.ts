@@ -1,5 +1,7 @@
 import postgres from 'postgres';
 
+import { IReceipt } from '@/app/types';
+
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
 export async function fetchUsers() {
@@ -49,15 +51,15 @@ export async function fetchExpensesForSelectedMonth({
 }: FetchExpensesForSelectedMonthParams) {
   try {
     const offset = (page - 1) * pageSize;
-    
+
     // Validate sortBy to prevent SQL injection
     const validSortColumns = ['amount', 'expense_date', 'created_at', 'name', 'category'];
     const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'amount';
     const safeSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
-    
+
     // Build ORDER BY clause - column name is safe because it's validated against whitelist
     const orderBy = `${safeSortBy} ${safeSortOrder}`;
-    
+
     // Use sql.unsafe with proper parameterization for values, validated column name in ORDER BY
     const [data, countResult] = await Promise.all([
       category
@@ -68,7 +70,7 @@ export async function fetchExpensesForSelectedMonth({
                AND category = '${category.replace(/'/g, "''")}'
              ORDER BY ${orderBy}
              LIMIT ${pageSize}
-             OFFSET ${offset}`
+             OFFSET ${offset}`,
           )
         : sql.unsafe<any>(
             `SELECT * FROM expenses 
@@ -76,7 +78,7 @@ export async function fetchExpensesForSelectedMonth({
                AND EXTRACT(MONTH FROM expense_date) = ${month}
              ORDER BY ${orderBy}
              LIMIT ${pageSize}
-             OFFSET ${offset}`
+             OFFSET ${offset}`,
           ),
       category
         ? sql<[{ count: string }]>`
@@ -89,7 +91,7 @@ export async function fetchExpensesForSelectedMonth({
             SELECT COUNT(*) as count FROM expenses 
             WHERE EXTRACT(YEAR FROM expense_date) = ${year}
               AND EXTRACT(MONTH FROM expense_date) = ${month}
-          `
+          `,
     ]);
 
     const total = parseInt(countResult[0]?.count || '0', 10);
@@ -240,5 +242,69 @@ export async function updateExpenseById(id: number, data: ExpenseUpdateInput) {
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to update expense.');
+  }
+}
+
+export type FetchReceiptsParams = {
+  page?: number;
+  pageSize?: number;
+  sortOrder?: 'asc' | 'desc';
+};
+
+export async function fetchReceipts({ page = 1, pageSize = 15, sortOrder = 'desc' }: FetchReceiptsParams = {}) {
+  try {
+    const offset = (page - 1) * pageSize;
+    const safeSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+
+    const [data, countResult] = await Promise.all([
+      sql.unsafe<IReceipt[]>(
+        `SELECT 
+          id,
+          receipt_date,
+          vendor,
+          total_amount
+        FROM receipts
+        ORDER BY receipt_date ${safeSortOrder}
+        LIMIT ${pageSize}
+        OFFSET ${offset}`,
+      ),
+      sql<[{ count: string }]>`
+        SELECT COUNT(*) as count FROM receipts
+      `,
+    ]);
+
+    const total = parseInt(countResult[0]?.count || '0', 10);
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+    };
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch receipts.');
+  }
+}
+
+type ReceiptUpdateInput = {
+  receipt_date: Date;
+  total_amount: number | null;
+};
+
+export async function updateReceiptById(id: number, data: ReceiptUpdateInput) {
+  try {
+    const [updatedReceipt] = await sql<any>`
+      UPDATE receipts
+      SET receipt_date = DATE(${data.receipt_date}),
+          total_amount = ${data.total_amount}
+      WHERE id = ${id}
+      RETURNING *
+    `;
+
+    return updatedReceipt;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to update receipt.');
   }
 }

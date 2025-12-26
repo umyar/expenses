@@ -7,3 +7,13 @@ export interface IExpense {
   expense_date: string;
   created_at: string;
 }
+
+export interface IReceipt {
+  id: number;
+  receipt_date: string;
+  vendor: string | null;
+  total_amount: number | null;
+  created_at: string;
+}
+
+export type VendorT = '1' | '2';
