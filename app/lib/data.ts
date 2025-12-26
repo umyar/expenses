@@ -308,3 +308,19 @@ export async function updateReceiptById(id: number, data: ReceiptUpdateInput) {
     throw new Error('Failed to update receipt.');
   }
 }
+
+export async function fetchExpensesByReceiptId(receiptId: number) {
+  try {
+    const data = await sql<any>`
+      SELECT id, name, amount
+      FROM expenses 
+      WHERE receipt_id = ${receiptId}
+      ORDER BY created_at DESC
+    `;
+
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch expenses by receipt ID.');
+  }
+}

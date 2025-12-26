@@ -6,16 +6,20 @@ import { format } from 'date-fns';
 import { ColumnDef, flexRender, getCoreRowModel, SortingState, useReactTable } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ArrowUpDown, Pencil } from 'lucide-react';
 
-import { IReceipt, VendorT } from '@/app/types';
+import { IReceipt, VendorT, IExpense } from '@/app/types';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getReceipts, editReceipt } from '@/app/lib/actions';
+import { getReceipts, editReceipt, getExpensesByReceiptId } from '@/app/lib/actions';
 import { DrawerDialog } from '@/components/drawer-dialog';
 import { EditReceipt } from './components/edit-receipt';
+import { ReceiptExpensesDrawer } from './components/receipt-expenses-drawer';
 
 const pageSize = 15;
 
-const createColumns = (handleOpenEdit: (receipt: IReceipt) => void): ColumnDef<IReceipt>[] => [
+const createColumns = (
+  handleOpenEdit: (receipt: IReceipt) => void,
+  handleOpenExpenses: (receiptId: number) => void,
+): ColumnDef<IReceipt>[] => [
   {
     accessorKey: 'receipt_date',
     header: ({ column }) => {
@@ -41,7 +45,12 @@ const createColumns = (handleOpenEdit: (receipt: IReceipt) => void): ColumnDef<I
     },
     cell: ({ row }) => {
       const date = new Date(row.getValue('receipt_date'));
-      return <div>{format(date, 'MMMM d, yyyy')}</div>;
+      const receipt = row.original;
+      return (
+        <button onClick={() => handleOpenExpenses(receipt.id)} className="hover:underline cursor-pointer text-left">
+          {format(date, 'MMMM d, yyyy')}
+        </button>
+      );
     },
     enableSorting: true,
   },
@@ -100,6 +109,10 @@ export default function ReceiptsPage() {
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [selectedReceipt, setSelectedReceipt] = React.useState<IReceipt | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isExpensesDrawerOpen, setIsExpensesDrawerOpen] = React.useState(false);
+  const [selectedReceiptId, setSelectedReceiptId] = React.useState<number | null>(null);
+  const [expenses, setExpenses] = React.useState<IExpense[]>([]);
+  const [isLoadingExpenses, setIsLoadingExpenses] = React.useState(false);
 
   const loadReceipts = React.useCallback(async () => {
     setIsLoading(true);
@@ -135,6 +148,21 @@ export default function ReceiptsPage() {
     setIsEditOpen(true);
   }, []);
 
+  const handleOpenExpenses = React.useCallback(async (receiptId: number) => {
+    setSelectedReceiptId(receiptId);
+    setIsExpensesDrawerOpen(true);
+    setIsLoadingExpenses(true);
+    try {
+      const expensesData = await getExpensesByReceiptId(receiptId);
+      setExpenses(expensesData);
+    } catch (error) {
+      console.error('Failed to load expenses:', error);
+      setExpenses([]);
+    } finally {
+      setIsLoadingExpenses(false);
+    }
+  }, []);
+
   const handleEditSubmit = React.useCallback(
     async (formData: { receipt_date: Date; total_amount: number | null }) => {
       if (!selectedReceipt) {
@@ -156,7 +184,10 @@ export default function ReceiptsPage() {
     [loadReceipts, selectedReceipt],
   );
 
-  const columns = React.useMemo(() => createColumns(handleOpenEdit), [handleOpenEdit]);
+  const columns = React.useMemo(
+    () => createColumns(handleOpenEdit, handleOpenExpenses),
+    [handleOpenEdit, handleOpenExpenses],
+  );
 
   const table = useReactTable({
     data,
@@ -289,6 +320,14 @@ export default function ReceiptsPage() {
           </div>
         )}
       </DrawerDialog>
+
+      <ReceiptExpensesDrawer
+        open={isExpensesDrawerOpen}
+        onOpenChange={setIsExpensesDrawerOpen}
+        receiptId={selectedReceiptId}
+        expenses={expenses}
+        isLoading={isLoadingExpenses}
+      />
     </div>
   );
 }

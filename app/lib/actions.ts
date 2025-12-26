@@ -9,6 +9,7 @@ import {
   fetchReceipts,
   type FetchReceiptsParams,
   updateReceiptById,
+  fetchExpensesByReceiptId,
 } from '@/app/lib/data';
 
 import { signIn } from '@/auth';
@@ -74,4 +75,9 @@ export async function editReceipt(receiptId: number, data: EditReceiptInput) {
     console.error('Failed to edit receipt:', error);
     throw new Error('Failed to edit receipt.');
   }
+}
+
+export async function getExpensesByReceiptId(receiptId: number) {
+  'use server';
+  return await fetchExpensesByReceiptId(receiptId);
 }
