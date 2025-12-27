@@ -11,7 +11,6 @@ interface MonthSelectorProps {
   defaultMonth: string;
 }
 
-// TODO: review the component
 export function MonthSelector({ defaultMonth }: MonthSelectorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,7 +20,7 @@ export function MonthSelector({ defaultMonth }: MonthSelectorProps) {
     const params = new URLSearchParams(searchParams);
     params.set('month', value);
 
-    router.push(`${pathname}?${params.toString()}`);
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
   // Parse the default month prop
