@@ -19,10 +19,6 @@ interface IParsedData {
   itemsList: IParsedDataItem[];
 }
 
-interface IPreparedItem extends Omit<IParsedDataItem, 'price'> {
-  amount: number;
-}
-
 export const pdfHandler = async (ctx: Context) => {
   const { message } = ctx;
 
@@ -44,7 +40,26 @@ export const pdfHandler = async (ctx: Context) => {
 
   const contents = [
     {
-      text: 'Parse this receipt and give me the list of bought items. Also add the category for each item. It might be one of 2 categories: groceries or other. To other goes everything what cannot be eaten or drunk. Name for each item should be translated to Russian and original Portuguese name from the receipt should be given in parentheses. Do not deduct discounts. Also give a total price and date from the receipt in YYYY-MM-DD format.',
+      text:
+        'Role: Act as an expert data extraction assistant specialized in retail receipts.\n' +
+        '\n' +
+        'Task: Analyze the provided PDF receipt and extract the following information into a structured format.\n' +
+        '\n' +
+        'Rules for Extraction:\n' +
+        '\n' +
+        'Item List: List every purchased item.\n' +
+        '\n' +
+        'Naming: Translate the item name to Russian. Include the original Portuguese name in parentheses immediately after (e.g., "Яблоки (Maçãs)").\n' +
+        '\n' +
+        'Categorization: Assign one of two categories to each item:\n' +
+        '\n' +
+        'groceries: Anything edible or drinkable.\n' +
+        '\n' +
+        'other: Non-food items (cleaning supplies, hygiene, bags, etc.).\n' +
+        '\n' +
+        'Pricing (In Cents): Provide the price of each individual item and the Total Price strictly in cents (e.g., a price of 2.28 must be converted to 228).\n' +
+        '\n' +
+        'Metadata: Extract the Date from the receipt in YYYY-MM-DD format and the Total Price in cents.',
     },
     {
       inlineData: {
@@ -99,7 +114,6 @@ export const pdfHandler = async (ctx: Context) => {
   }
 
   const { totalPrice, date, itemsList } = parsedData;
-  const receiptAmountInCents = Math.floor(totalPrice * 100);
   const getVendorName = () => {
     const fileName = message.document!.file_name;
 
@@ -111,33 +125,22 @@ export const pdfHandler = async (ctx: Context) => {
   };
   const addedBy = message.from.username!;
 
-  let itemsCentsSum = 0;
-
-  const preparedItems: IPreparedItem[] = itemsList.reduce((acc: IPreparedItem[], item) => {
-    const { price, category, name } = item;
-
-    if (price > 0) {
-      const priceInCents = Math.floor(item.price * 100);
-      itemsCentsSum += priceInCents;
-
-      acc.push({
-        name,
-        category,
-        amount: priceInCents,
-      });
+  const itemsSum: number = itemsList.reduce((acc: number, item) => {
+    if (item.price > 0) {
+      acc += item.price;
     }
 
     return acc;
-  }, []);
+  }, 0);
 
-  if (itemsCentsSum !== receiptAmountInCents) {
-    console.log('❗️Not equal:', { itemsSum: itemsCentsSum, receiptAmount: receiptAmountInCents });
+  // console.log('🆘 itemsList', itemsList);
+  // console.log('🆘 amounts:', { totalPrice, itemsSum });
+
+  if (itemsSum !== totalPrice) {
+    console.log('❗️Not equal:', { itemsSum, receiptAmount: totalPrice });
     await ctx.reply(`❗️ERROR with ${message.document.file_name} while checking sums`);
     return;
   }
-
-  // console.log('🆘 itemsList', itemsList);
-  // console.log('🆘 preparedItems', preparedItems);
 
   try {
     await sql.begin(async tx => {
@@ -147,7 +150,7 @@ export const pdfHandler = async (ctx: Context) => {
 
       const [receipt] = await tx`
         INSERT INTO receipts (vendor, added_by, total_amount, receipt_date)
-        VALUES (${getVendorName()}, ${user.id}, ${receiptAmountInCents}, ${date})
+        VALUES (${getVendorName()}, ${user.id}, ${totalPrice}, ${date})
         RETURNING id
   `;
 
@@ -155,10 +158,10 @@ export const pdfHandler = async (ctx: Context) => {
 
       await tx`
         INSERT INTO expenses ${sql(
-          preparedItems.map(i => ({
+          itemsList.map(i => ({
             name: i.name,
             category: i.category,
-            amount: i.amount,
+            amount: i.price,
             receipt_id: receiptId,
             expense_date: date,
             added_by: user.id,
@@ -172,7 +175,7 @@ export const pdfHandler = async (ctx: Context) => {
         )}
   `;
     });
-    await ctx.reply(`✅ ${message.document.file_name}`);
+    await ctx.reply(`✅ ${message.document.file_name}. TOTAL PRICE: ${totalPrice} cents`);
   } catch (e) {
     console.error(e);
     await ctx.reply(`❗️SQL ERROR with ${message.document.file_name}`);
