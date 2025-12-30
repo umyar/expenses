@@ -7,6 +7,14 @@ import { gemini } from '@/app/lib/gemini';
 const token = process.env.TELEGRAM_BOT_TOKEN!;
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
+const getVendorName = (fileName: string | undefined) => {
+  if (fileName) {
+    return fileName.includes('Continente') ? 1 : 2;
+  }
+
+  return null;
+};
+
 interface IParsedDataItem {
   name: string;
   price: number;
@@ -38,28 +46,51 @@ export const pdfHandler = async (ctx: Context) => {
 
   const pdfArrayBuffer = Buffer.from(await response.arrayBuffer());
 
+  const groceriesVendor = getVendorName(message.document!.file_name);
+  const isContinenteReceipt = groceriesVendor === 1;
+
   const contents = [
     {
       text:
-        'Role: Act as an expert data extraction assistant specialized in retail receipts.\n' +
-        '\n' +
-        'Task: Analyze the provided PDF receipt and extract the following information into a structured format.\n' +
-        '\n' +
-        'Rules for Extraction:\n' +
-        '\n' +
-        'Item List: List every purchased item.\n' +
-        '\n' +
-        'Naming: Translate the item name to Russian. Include the original Portuguese name in parentheses immediately after (e.g., "Яблоки (Maçãs)").\n' +
-        '\n' +
-        'Categorization: Assign one of two categories to each item:\n' +
-        '\n' +
-        'groceries: Anything edible or drinkable.\n' +
-        '\n' +
-        'other: Non-food items (cleaning supplies, hygiene, bags, etc.).\n' +
-        '\n' +
-        'Pricing (In Cents): Provide the price of each individual item and the Total Price strictly in cents (e.g., a price of 2.28 must be converted to 228).\n' +
-        '\n' +
-        'Metadata: Extract the Date from the receipt in YYYY-MM-DD format and the Total Price in cents.',
+        // 'Role: Act as an expert data extraction assistant specialized in retail receipts.\n' +
+        // '\n' +
+        // 'Task: Analyze the provided PDF receipt and extract the following information into a structured format.\n' +
+        // '\n' +
+        // 'Rules for Extraction:\n' +
+        // '\n' +
+        // 'Item List: List every purchased item.\n' +
+        // '\n' +
+        // 'Ignore Discounts: Do not include discounts, coupons, or price deductions as separate line items. Extract only the standard price of the items.\n' +
+        // '\n' +
+        // 'Naming: Translate the item name to Russian. Include the original Portuguese name in parentheses immediately after (e.g., "Яблоки (Maçãs)").\n' +
+        // '\n' +
+        // 'Categorization: Assign one of two categories to each item:\n' +
+        // '\n' +
+        // 'groceries: Anything edible or drinkable.\n' +
+        // '\n' +
+        // 'other: Non-food items (cleaning supplies, hygiene, bags, etc.).\n' +
+        // '\n' +
+        // 'Pricing (In Cents): Provide the price of each individual item and the Total Price strictly in cents (e.g., a price of 2.28 must be converted to 228).\n' +
+        // '\n' +
+        // 'Metadata: Extract the Date from the receipt in YYYY-MM-DD format and the Total Price in cents.',
+
+        `
+        Role: Act as an expert data extraction assistant specialized in retail receipts.
+        Task: Analyze the provided PDF receipt and extract the following information into a structured format.
+        Rules for Extraction:
+        Item List: List every purchased item.
+        ${
+          isContinenteReceipt
+            ? '\nIgnore Discounts: Do not include discounts, coupons, or price deductions as separate line items. Extract only the standard price of the items.\n'
+            : ''
+        }
+        Naming: Translate the item name to Russian. Include the original Portuguese name in parentheses immediately after (e.g., "Яблоки (Maçãs)").
+        Categorization: Assign one of two categories to each item:
+        groceries: Anything edible or drinkable.
+        other: Non-food items (cleaning supplies, hygiene, bags, etc.).
+        Pricing (In Cents): Provide the price of each individual item and the Total Price strictly in cents (e.g., a price of 2.28 must be converted to 228).
+        Metadata: Extract the Date from the receipt in YYYY-MM-DD format and the Total Price in cents.
+        `,
     },
     {
       inlineData: {
@@ -114,15 +145,7 @@ export const pdfHandler = async (ctx: Context) => {
   }
 
   const { totalPrice, date, itemsList } = parsedData;
-  const getVendorName = () => {
-    const fileName = message.document!.file_name;
 
-    if (fileName) {
-      return fileName.includes('Continente') ? 1 : 2;
-    }
-
-    return null;
-  };
   const addedBy = message.from.username!;
 
   const itemsSum: number = itemsList.reduce((acc: number, item) => {
@@ -135,6 +158,7 @@ export const pdfHandler = async (ctx: Context) => {
 
   // console.log('🆘 itemsList', itemsList);
   // console.log('🆘 amounts:', { totalPrice, itemsSum });
+  // return;
 
   if (itemsSum !== totalPrice) {
     console.log('❗️Not equal:', { itemsSum, receiptAmount: totalPrice });
@@ -150,7 +174,7 @@ export const pdfHandler = async (ctx: Context) => {
 
       const [receipt] = await tx`
         INSERT INTO receipts (vendor, added_by, total_amount, receipt_date)
-        VALUES (${getVendorName()}, ${user.id}, ${totalPrice}, ${date})
+        VALUES (${groceriesVendor}, ${user.id}, ${totalPrice}, ${date})
         RETURNING id
   `;
 
