@@ -18,7 +18,7 @@ export async function fetchUsers() {
 export async function fetchExpensesByDate(date: Date) {
   try {
     const data = await sql<any>`
-      SELECT * FROM expenses 
+      SELECT id, name, category, amount, expense_date FROM expenses 
       WHERE expense_date = DATE(${date})
       ORDER BY created_at DESC
     `;
@@ -64,7 +64,7 @@ export async function fetchExpensesForSelectedMonth({
     const [data, countResult] = await Promise.all([
       category
         ? sql.unsafe<any>(
-            `SELECT * FROM expenses 
+            `SELECT id, name, category, amount, expense_date FROM expenses 
              WHERE EXTRACT(YEAR FROM expense_date) = ${year}
                AND EXTRACT(MONTH FROM expense_date) = ${month}
                AND category = '${category.replace(/'/g, "''")}'
@@ -73,7 +73,7 @@ export async function fetchExpensesForSelectedMonth({
              OFFSET ${offset}`,
           )
         : sql.unsafe<any>(
-            `SELECT * FROM expenses 
+            `SELECT id, name, category, amount, expense_date FROM expenses 
              WHERE EXTRACT(YEAR FROM expense_date) = ${year}
                AND EXTRACT(MONTH FROM expense_date) = ${month}
              ORDER BY ${orderBy}
