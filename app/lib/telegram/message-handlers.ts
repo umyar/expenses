@@ -173,7 +173,7 @@ export const pdfHandler = async (ctx: Context) => {
       `;
 
       const [receipt] = await tx`
-        INSERT INTO receipt (vendor, user_id, total_amount, receipt_date)
+        INSERT INTO receipt (vendor, user_id, amount, receipt_date)
         VALUES (${groceriesVendor}, ${user.user_id}, ${totalPrice}, ${date})
         RETURNING id
   `;
@@ -234,7 +234,7 @@ export const textHandler = async (ctx: Context) => {
 
   try {
     await sql`
-      INSERT INTO expense (name, amount, category, added_by)
+      INSERT INTO expense (name, amount, category, user_id)
       VALUES (${name}, ${amountInCents}, ${expenseCategory}, (SELECT user_id FROM users WHERE telegram = ${addedBy}))
     `;
     await ctx.reply(`✅ ${name} | ${amount} | ${expenseCategory}`);
