@@ -71,12 +71,12 @@ const createColumns = (
     },
   },
   {
-    accessorKey: 'total_amount',
+    accessorKey: 'amount',
     header: () => {
       return <div className="text-right">Total Amount</div>;
     },
     cell: ({ row }) => {
-      const amountInCents = row.getValue('total_amount') as number | null;
+      const amountInCents = row.getValue('amount') as number | null;
       if (amountInCents === null) {
         return <div className="text-right">N/A</div>;
       }

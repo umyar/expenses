@@ -234,7 +234,7 @@ export async function updateExpenseById(id: number, data: ExpenseUpdateInput) {
           category = ${data.category},
           amount = ${data.amount},
           expense_date = DATE(${data.expense_date})
-      WHERE id = ${id}
+      WHERE expense_id = ${id}
       RETURNING *
     `;
 
