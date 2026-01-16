@@ -1,5 +1,5 @@
 export interface IExpense {
-  id: number;
+  expense_id: number;
   name: string;
   category: string | null;
   amount: number;
@@ -9,10 +9,10 @@ export interface IExpense {
 }
 
 export interface IReceipt {
-  id: number;
+  receipt_id: number;
   receipt_date: string;
   vendor: VendorT;
-  total_amount: number | null;
+  amount: number | null;
   created_at: string;
 }
 

@@ -169,33 +169,33 @@ export const pdfHandler = async (ctx: Context) => {
   try {
     await sql.begin(async tx => {
       const [user] = await tx`
-        SELECT id FROM users WHERE telegram = ${addedBy}
+        SELECT user_id FROM users WHERE telegram = ${addedBy}
       `;
 
       const [receipt] = await tx`
-        INSERT INTO receipts (vendor, added_by, total_amount, receipt_date)
-        VALUES (${groceriesVendor}, ${user.id}, ${totalPrice}, ${date})
+        INSERT INTO receipt (vendor, user_id, total_amount, receipt_date)
+        VALUES (${groceriesVendor}, ${user.user_id}, ${totalPrice}, ${date})
         RETURNING id
   `;
 
-      const receiptId = receipt.id;
+      const receiptId = receipt.receipt_id;
 
       await tx`
-        INSERT INTO expenses ${sql(
+        INSERT INTO expense ${sql(
           itemsList.map(i => ({
             name: i.name,
             category: i.category,
             amount: i.price,
             receipt_id: receiptId,
             expense_date: date,
-            added_by: user.id,
+            user_id: user.user_id,
           })),
           'name',
           'category',
           'amount',
           'receipt_id',
           'expense_date',
-          'added_by',
+          'user_id',
         )}
   `;
     });
@@ -234,8 +234,8 @@ export const textHandler = async (ctx: Context) => {
 
   try {
     await sql`
-      INSERT INTO expenses (name, amount, category, added_by)
-      VALUES (${name}, ${amountInCents}, ${expenseCategory}, (SELECT id FROM users WHERE telegram = ${addedBy}))
+      INSERT INTO expense (name, amount, category, added_by)
+      VALUES (${name}, ${amountInCents}, ${expenseCategory}, (SELECT user_id FROM users WHERE telegram = ${addedBy}))
     `;
     await ctx.reply(`✅ ${name} | ${amount} | ${expenseCategory}`);
   } catch (e) {

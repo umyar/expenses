@@ -9,11 +9,11 @@ import { Button } from '@/components/ui/button';
 interface EditReceiptProps {
   defaultValues?: {
     receipt_date?: Date | string;
-    total_amount?: number | null; // amount in cents
+    amount?: number | null; // amount in cents
   };
   onSubmit?: (data: {
     receipt_date: Date;
-    total_amount: number | null; // amount in cents
+    amount: number | null; // amount in cents
   }) => Promise<void> | void;
   className?: string;
   submitLabel?: string;
@@ -28,16 +28,16 @@ export function EditReceipt({
   isSubmitting = false,
 }: EditReceiptProps) {
   const [amount, setAmount] = React.useState(
-    defaultValues?.total_amount !== null && defaultValues?.total_amount !== undefined
-      ? (defaultValues.total_amount / 100).toFixed(2)
-      : ''
+    defaultValues?.amount !== null && defaultValues?.amount !== undefined
+      ? (defaultValues.amount / 100).toFixed(2)
+      : '',
   );
   const [receiptDate, setReceiptDate] = React.useState<Date | undefined>(
     defaultValues?.receipt_date
       ? typeof defaultValues.receipt_date === 'string'
         ? new Date(defaultValues.receipt_date)
         : defaultValues.receipt_date
-      : undefined
+      : undefined,
   );
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -54,7 +54,7 @@ export function EditReceipt({
 
     await onSubmit({
       receipt_date: selectedDate,
-      total_amount: amountInCents,
+      amount: amountInCents,
     });
   };
 
@@ -80,7 +80,7 @@ export function EditReceipt({
             step="0.01"
             min="0"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={e => setAmount(e.target.value)}
             placeholder="0.00"
           />
         </Field>
@@ -94,4 +94,3 @@ export function EditReceipt({
     </form>
   );
 }
-

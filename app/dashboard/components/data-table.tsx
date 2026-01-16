@@ -115,7 +115,7 @@ const createColumns = (handleOpenEdit: (expense: IExpense) => void): ColumnDef<I
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(String(expense.id))}>
+            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(String(expense.expense_id))}>
               Copy expense ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -194,7 +194,7 @@ export function DataTable() {
 
       setIsSaving(true);
       try {
-        await editExpense(selectedExpense.id, formData);
+        await editExpense(selectedExpense.expense_id, formData);
         await loadExpenses();
         setIsEditOpen(false);
         setSelectedExpense(null);
@@ -323,7 +323,7 @@ export function DataTable() {
           }
         }}
         title="Edit expense"
-        description={selectedExpense ? `Update expense #${selectedExpense.id}` : undefined}
+        description={selectedExpense ? `Update expense #${selectedExpense.expense_id}` : undefined}
         dialogContentClassName="sm:max-w-lg"
         drawerContentClassName="p-[32px] pt-0"
       >

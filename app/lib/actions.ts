@@ -64,7 +64,7 @@ export async function getReceipts(params: FetchReceiptsParams = {}) {
 
 type EditReceiptInput = {
   receipt_date: Date;
-  total_amount: number | null;
+  amount: number | null;
 };
 
 export async function editReceipt(receiptId: number, data: EditReceiptInput) {

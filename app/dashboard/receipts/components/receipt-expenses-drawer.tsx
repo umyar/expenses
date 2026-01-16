@@ -81,7 +81,7 @@ export function ReceiptExpensesDrawer({
                 }).format(amountInEuros);
                 return (
                   <div
-                    key={expense.id}
+                    key={expense.expense_id}
                     className="flex justify-between items-center pb-2 border-b last:border-0 text-sm gap-2"
                   >
                     <div className="font-normal">{expense.name}</div>

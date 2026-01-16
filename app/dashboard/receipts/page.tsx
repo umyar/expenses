@@ -48,7 +48,7 @@ const createColumns = (
       const receipt = row.original;
       return (
         <button
-          onClick={() => handleOpenExpenses({ id: receipt.id, vendor: receipt.vendor })}
+          onClick={() => handleOpenExpenses({ id: receipt.receipt_id, vendor: receipt.vendor })}
           className="hover:underline cursor-pointer text-left"
         >
           {format(date, 'MMMM d, yyyy')}
@@ -170,14 +170,14 @@ export default function ReceiptsPage() {
   }, []);
 
   const handleEditSubmit = React.useCallback(
-    async (formData: { receipt_date: Date; total_amount: number | null }) => {
+    async (formData: { receipt_date: Date; amount: number | null }) => {
       if (!selectedReceipt) {
         return;
       }
 
       setIsSaving(true);
       try {
-        await editReceipt(selectedReceipt.id, formData);
+        await editReceipt(selectedReceipt.receipt_id, formData);
         await loadReceipts();
         setIsEditOpen(false);
         setSelectedReceipt(null);
@@ -309,7 +309,7 @@ export default function ReceiptsPage() {
           }
         }}
         title="Edit receipt"
-        description={selectedReceipt ? `Update receipt #${selectedReceipt.id}` : undefined}
+        description={selectedReceipt ? `Update receipt #${selectedReceipt.receipt_id}` : undefined}
         dialogContentClassName="sm:max-w-lg"
         drawerContentClassName="p-[32px] pt-0"
       >
@@ -318,7 +318,7 @@ export default function ReceiptsPage() {
             <EditReceipt
               defaultValues={{
                 receipt_date: selectedReceipt.receipt_date,
-                total_amount: selectedReceipt.total_amount,
+                amount: selectedReceipt.amount,
               }}
               onSubmit={handleEditSubmit}
               isSubmitting={isSaving}

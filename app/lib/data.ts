@@ -18,7 +18,7 @@ export async function fetchUsers() {
 export async function fetchExpensesByDate(date: Date) {
   try {
     const data = await sql<any>`
-      SELECT id, name, category, amount, expense_date FROM expenses 
+      SELECT expense_id, name, category, amount, expense_date FROM expense
       WHERE expense_date = DATE(${date})
       ORDER BY created_at DESC
     `;
@@ -64,7 +64,7 @@ export async function fetchExpensesForSelectedMonth({
     const [data, countResult] = await Promise.all([
       category
         ? sql.unsafe<any>(
-            `SELECT id, name, category, amount, expense_date FROM expenses 
+            `SELECT expense_id, name, category, amount, expense_date FROM expense 
              WHERE EXTRACT(YEAR FROM expense_date) = ${year}
                AND EXTRACT(MONTH FROM expense_date) = ${month}
                AND category = '${category.replace(/'/g, "''")}'
@@ -73,7 +73,7 @@ export async function fetchExpensesForSelectedMonth({
              OFFSET ${offset}`,
           )
         : sql.unsafe<any>(
-            `SELECT id, name, category, amount, expense_date FROM expenses 
+            `SELECT expense_id, name, category, amount, expense_date FROM expense 
              WHERE EXTRACT(YEAR FROM expense_date) = ${year}
                AND EXTRACT(MONTH FROM expense_date) = ${month}
              ORDER BY ${orderBy}
@@ -82,13 +82,13 @@ export async function fetchExpensesForSelectedMonth({
           ),
       category
         ? sql<[{ count: string }]>`
-            SELECT COUNT(*) as count FROM expenses 
+            SELECT COUNT(*) as count FROM expense
             WHERE EXTRACT(YEAR FROM expense_date) = ${year}
               AND EXTRACT(MONTH FROM expense_date) = ${month}
               AND category = ${category}
           `
         : sql<[{ count: string }]>`
-            SELECT COUNT(*) as count FROM expenses 
+            SELECT COUNT(*) as count FROM expense
             WHERE EXTRACT(YEAR FROM expense_date) = ${year}
               AND EXTRACT(MONTH FROM expense_date) = ${month}
           `,
@@ -112,7 +112,7 @@ export async function fetchTodaySpent(date: Date) {
   try {
     const result = await sql<[{ sum: number | null }]>`
       SELECT COALESCE(SUM(amount), 0) as sum
-      FROM expenses 
+      FROM expense
       WHERE expense_date = DATE(${date})
     `;
 
@@ -127,7 +127,7 @@ export async function fetchMonthSpent(year: number, month: number) {
   try {
     const result = await sql<[{ sum: number | null }]>`
       SELECT COALESCE(SUM(amount), 0) as sum
-      FROM expenses 
+      FROM expense
       WHERE EXTRACT(YEAR FROM expense_date) = ${year}
         AND EXTRACT(MONTH FROM expense_date) = ${month}
     `;
@@ -154,7 +154,7 @@ export async function fetchMonthlyTotalsByCategories(year: number, month: number
         EXTRACT(MONTH FROM expense_date)::INTEGER AS month,
         COALESCE(category, 'other') AS category,
         SUM(amount)::INTEGER AS total
-      FROM expenses
+      FROM expense
       WHERE EXTRACT(YEAR FROM expense_date) = ${year}
         AND EXTRACT(MONTH FROM expense_date) = ${month}
       GROUP BY
@@ -178,7 +178,7 @@ export async function fetchNMonthsTotalsByCategories(lastNMonths: number) {
           EXTRACT(MONTH FROM expense_date)::INTEGER AS month,
           COALESCE(category, 'other') AS category,
           SUM(amount)::INTEGER AS total
-        FROM expenses
+        FROM expense
         GROUP BY
          EXTRACT(YEAR FROM expense_date),
          EXTRACT(MONTH FROM expense_date),
@@ -203,7 +203,7 @@ export async function fetchNMonthsTotalsByCategories(lastNMonths: number) {
           EXTRACT(MONTH FROM expense_date)::INTEGER AS month,
           COALESCE(category, 'other') AS category,
           SUM(amount)::INTEGER AS total
-        FROM expenses
+        FROM expense
         WHERE expense_date >= ${startDate}::date
           AND expense_date < (${endDate}::date + interval '1 month')
         GROUP BY
@@ -229,7 +229,7 @@ type ExpenseUpdateInput = {
 export async function updateExpenseById(id: number, data: ExpenseUpdateInput) {
   try {
     const [updatedExpense] = await sql<any>`
-      UPDATE expenses
+      UPDATE expense
       SET name = ${data.name},
           category = ${data.category},
           amount = ${data.amount},
@@ -259,17 +259,17 @@ export async function fetchReceipts({ page = 1, pageSize = 15, sortOrder = 'desc
     const [data, countResult] = await Promise.all([
       sql.unsafe<IReceipt[]>(
         `SELECT 
-          id,
+          receipt_id,
           receipt_date,
           vendor,
-          total_amount
-        FROM receipts
+          amount
+        FROM receipt
         ORDER BY receipt_date ${safeSortOrder}
         LIMIT ${pageSize}
         OFFSET ${offset}`,
       ),
       sql<[{ count: string }]>`
-        SELECT COUNT(*) as count FROM receipts
+        SELECT COUNT(*) as count FROM receipt
       `,
     ]);
 
@@ -289,16 +289,16 @@ export async function fetchReceipts({ page = 1, pageSize = 15, sortOrder = 'desc
 
 type ReceiptUpdateInput = {
   receipt_date: Date;
-  total_amount: number | null;
+  amount: number | null;
 };
 
 export async function updateReceiptById(id: number, data: ReceiptUpdateInput) {
   try {
     const [updatedReceipt] = await sql<any>`
-      UPDATE receipts
+      UPDATE receipt
       SET receipt_date = DATE(${data.receipt_date}),
-          total_amount = ${data.total_amount}
-      WHERE id = ${id}
+          amount = ${data.amount}
+      WHERE receipt_id = ${id}
       RETURNING *
     `;
 
@@ -312,8 +312,8 @@ export async function updateReceiptById(id: number, data: ReceiptUpdateInput) {
 export async function fetchExpensesByReceiptId(receiptId: number) {
   try {
     const data = await sql<any>`
-      SELECT id, name, amount
-      FROM expenses 
+      SELECT expense_id, name, amount
+      FROM expense
       WHERE receipt_id = ${receiptId}
       ORDER BY created_at DESC
     `;
