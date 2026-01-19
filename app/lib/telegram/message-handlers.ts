@@ -175,7 +175,7 @@ export const pdfHandler = async (ctx: Context) => {
       const [receipt] = await tx`
         INSERT INTO receipt (vendor, user_id, amount, receipt_date)
         VALUES (${groceriesVendor}, ${user.user_id}, ${totalPrice}, ${date})
-        RETURNING id
+        RETURNING receipt_id
   `;
 
       const receiptId = receipt.receipt_id;
