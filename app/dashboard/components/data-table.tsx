@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { format, subDays, addDays, isAfter, startOfDay } from 'date-fns';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -14,7 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from '@tanstack/react-table';
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, MoreHorizontal } from 'lucide-react';
 
 import { categoriesDictionary } from '@/app/lib/constants';
 import { Button } from '@/components/ui/button';
@@ -34,6 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { getExpensesByDay, editExpense } from '@/app/lib/actions';
 import { DrawerDialog } from '@/components/drawer-dialog';
 import { EditForm } from '@/components/expenses/edit-form';
+import { DateSelector } from './date-selector';
 
 const createColumns = (handleOpenEdit: (expense: IExpense) => void): ColumnDef<IExpense>[] => [
   {
@@ -182,10 +182,6 @@ export function DataTable() {
     },
   });
 
-  const today = startOfDay(new Date());
-  const nextDay = addDays(selectedDay, 1);
-  const isNextDayAfterToday = isAfter(startOfDay(nextDay), today);
-
   const handleEditSubmit = React.useCallback(
     async (formData: { name: string; category: string; amount: number; expense_date: Date }) => {
       if (!selectedExpense) {
@@ -211,22 +207,7 @@ export function DataTable() {
     <>
       <div className="w-full">
         <div className="flex flex-wrap items-center py-4 gap-5">
-          <div className="flex items-center">
-            <Button variant="outline" size="icon" onClick={() => setSelectedDay(subDays(selectedDay, 1))}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="px-3 py-2 text-sm font-medium min-w-[120px] text-center">
-              {format(selectedDay, 'dd-MM-yyyy')}
-            </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setSelectedDay(addDays(selectedDay, 1))}
-              disabled={isNextDayAfterToday}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <DateSelector value={selectedDay} onChange={setSelectedDay} />
           <div className="min-w-[200px] flex-1">
             <Input
               placeholder="Filter by name..."

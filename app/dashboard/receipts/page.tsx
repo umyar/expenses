@@ -49,7 +49,7 @@ const createColumns = (
       return (
         <button
           onClick={() => handleOpenExpenses({ id: receipt.receipt_id, vendor: receipt.vendor })}
-          className="hover:underline cursor-pointer text-left"
+          className="underline cursor-pointer text-left"
         >
           {format(date, 'MMMM d, yyyy')}
         </button>
@@ -96,7 +96,7 @@ const createColumns = (
       const receipt = row.original;
       return (
         <div className="flex justify-end">
-          <Button variant="ghost" className="h-8 w-8 p-0" onClick={() => handleOpenEdit(receipt)}>
+          <Button variant="outline" className="h-8 w-8 p-0" onClick={() => handleOpenEdit(receipt)}>
             <span className="sr-only">Edit receipt</span>
             <Pencil className="h-4 w-4" />
           </Button>
