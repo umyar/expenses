@@ -33,6 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { getExpensesByDay, editExpense } from '@/app/lib/actions';
 import { DrawerDialog } from '@/components/drawer-dialog';
 import { EditForm } from '@/components/expenses/edit-form';
+import { format } from 'date-fns';
 import { DateSelector } from './date-selector';
 
 const createColumns = (handleOpenEdit: (expense: IExpense) => void): ColumnDef<IExpense>[] => [
@@ -128,8 +129,7 @@ const createColumns = (handleOpenEdit: (expense: IExpense) => void): ColumnDef<I
   },
 ];
 
-export function DataTable() {
-  const [selectedDay, setSelectedDay] = React.useState<Date>(new Date());
+export function DataTable({ selectedDay }: { selectedDay: Date }) {
   const [data, setData] = React.useState<IExpense[]>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -207,7 +207,7 @@ export function DataTable() {
     <>
       <div className="w-full">
         <div className="flex flex-wrap items-center py-4 gap-5">
-          <DateSelector value={selectedDay} onChange={setSelectedDay} />
+          <DateSelector defaultDate={format(selectedDay, 'dd-MM-yyyy')} />
           <div className="min-w-[200px] flex-1">
             <Input
               placeholder="Filter by name..."

@@ -4,11 +4,10 @@ import { Card, CardHeader, CardDescription, CardTitle, CardAction, CardFooter } 
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchTodaySpent, fetchMonthSpent } from '@/app/lib/data';
 
-export async function StatsCards() {
-  const today = new Date();
+export async function StatsCards({ selectedDay }: { selectedDay: Date }) {
   const [todaySpent, monthSpent] = await Promise.all([
-    fetchTodaySpent(today),
-    fetchMonthSpent(today.getFullYear(), today.getMonth() + 1),
+    fetchTodaySpent(selectedDay),
+    fetchMonthSpent(selectedDay.getFullYear(), selectedDay.getMonth() + 1),
   ]);
 
   const formatAmount = (amountInCents: number) => {
@@ -23,7 +22,7 @@ export async function StatsCards() {
     <div className="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Spent Today</CardDescription>
+          <CardDescription>Total Spent This Day</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {formatAmount(todaySpent)}
           </CardTitle>
@@ -42,7 +41,7 @@ export async function StatsCards() {
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Spent This Month</CardDescription>
+          <CardDescription>Total Spent This Month</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {formatAmount(monthSpent)}
           </CardTitle>
