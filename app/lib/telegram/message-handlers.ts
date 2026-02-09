@@ -216,6 +216,8 @@ const categoriesDictionary: Record<string, string> = {
   cs: 'clothes-shoes',
 };
 
+const METRO_PRICE = 1.4;
+
 export const textHandler = async (ctx: Context) => {
   const { message } = ctx;
 
@@ -228,14 +230,32 @@ export const textHandler = async (ctx: Context) => {
   const [name, amount, category] = separatedNodes;
 
   const addedBy = message.from.username!;
-  const expenseCategory = categoriesDictionary[category] || 'other';
+  let expenseName = name;
+  let expenseCategory = categoriesDictionary[category] || 'other';
   const amountParsed = Number(amount.replace(',', '.'));
-  const amountInCents = Math.floor(amountParsed * 100);
+  let amountInCents = Math.floor(amountParsed * 100);
+
+  if (!amount || !category) {
+    const match = name.match(/^([мМ])(\d)$/);
+
+    if (match) {
+      const letter = match[1]; // for the future
+      const number = Number(match[2]);
+
+      expenseName = 'Метро';
+      expenseCategory = 'transportation';
+      const expenseAmount = Number(number) * METRO_PRICE;
+      amountInCents = Math.floor(expenseAmount * 100);
+    } else {
+      await ctx.reply(`❗️ERROR: could not parse the message.`);
+      return;
+    }
+  }
 
   try {
     await sql`
       INSERT INTO expense (name, amount, category, user_id)
-      VALUES (${name}, ${amountInCents}, ${expenseCategory}, (SELECT user_id FROM users WHERE telegram = ${addedBy}))
+      VALUES (${expenseName}, ${amountInCents}, ${expenseCategory}, (SELECT user_id FROM users WHERE telegram = ${addedBy}))
     `;
     await ctx.reply(`✅ ${name} | ${amount} | ${expenseCategory}`);
   } catch (e) {
