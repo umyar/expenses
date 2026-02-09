@@ -232,7 +232,8 @@ export const textHandler = async (ctx: Context) => {
   const addedBy = message.from.username!;
   let expenseName = name;
   let expenseCategory = categoriesDictionary[category] || 'other';
-  let amountInCents = 0;
+  const amountParsed = amount ? Number(amount.replace(',', '.')) : 0;
+  let amountInCents = Math.floor(amountParsed * 100);
 
   if (!amount || !category) {
     const match = name.match(/^([мМ])(\d)$/);
@@ -250,9 +251,6 @@ export const textHandler = async (ctx: Context) => {
       return;
     }
   }
-
-  const amountParsed = Number(amount.replace(',', '.'));
-  amountInCents = Math.floor(amountParsed * 100);
 
   try {
     await sql`
