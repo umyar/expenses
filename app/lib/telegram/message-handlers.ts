@@ -232,8 +232,7 @@ export const textHandler = async (ctx: Context) => {
   const addedBy = message.from.username!;
   let expenseName = name;
   let expenseCategory = categoriesDictionary[category] || 'other';
-  const amountParsed = Number(amount.replace(',', '.'));
-  let amountInCents = Math.floor(amountParsed * 100);
+  let amountInCents = 0;
 
   if (!amount || !category) {
     const match = name.match(/^([мМ])(\d)$/);
@@ -252,14 +251,17 @@ export const textHandler = async (ctx: Context) => {
     }
   }
 
+  const amountParsed = Number(amount.replace(',', '.'));
+  amountInCents = Math.floor(amountParsed * 100);
+
   try {
     await sql`
       INSERT INTO expense (name, amount, category, user_id)
       VALUES (${expenseName}, ${amountInCents}, ${expenseCategory}, (SELECT user_id FROM users WHERE telegram = ${addedBy}))
     `;
-    await ctx.reply(`✅ ${name} | ${amount} | ${expenseCategory}`);
+    await ctx.reply(`✅ ${expenseName} | ${amountInCents} cents | ${expenseCategory}`);
   } catch (e) {
     console.error(e);
-    await ctx.reply(`❗️ERROR with: ${name} | ${amount} | ${expenseCategory}`);
+    await ctx.reply(`❗️ERROR with: ${expenseName} | ${amountInCents} cents | ${expenseCategory}`);
   }
 };
