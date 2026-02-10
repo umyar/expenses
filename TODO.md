@@ -1,6 +1,5 @@
-1. telegram message webhook setup (X-Telegram-Bot-Api-Secret-Token: YOUR_SECRET_HEADER_TOKEN) + protection (https://chatgpt.com/c/690a6559-7b58-8331-b104-7745c0045356)
-2. telegram message webhook handling on a separate route (+TELEGRAM_WEBHOOK_SECRET)
-3. create a db collection for expenses (https://chatgpt.com/c/690d3cb2-2c9c-832d-912c-c4e529d018f9)
-4. get a pdf doc and send it to gemini
-5. try to parse the gemini response and save it to db
-6. review tg-webhook handler code
+1. Create a staging env (preview vercel env w/ neon branch)
+2. Recheck seeds.sql (correct table schemas and constraints) - https://chatgpt.com/c/698baae0-9b2c-8331-a2eb-3e4719f09d6a
+3. Proper telegram messages shortcuts system (per user in db)
+4. Groups for users - TEST
+5. Invitations table (user_group_invitation) - TEST

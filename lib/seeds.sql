@@ -9,8 +9,11 @@ CREATE TABLE if NOT EXISTS users (
   password TEXT NOT NULL
 );
 
--- vendors table (not sure needed)
-CREATE TABLE if NOT EXISTS vendor (vendor_id SERIAL PRIMARY KEY, name TEXT NOT NULL);
+-- vendors table
+CREATE TABLE if NOT EXISTS vendor (
+  vendor_id SERIAL PRIMARY KEY,
+  name varchar(50) NOT NULL
+);
 
 -- Receipts table
 CREATE TABLE if NOT EXISTS receipt (
@@ -40,3 +43,44 @@ CREATE TABLE if NOT EXISTS expense (
   expense_date DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMP DEFAULT NOW ()
 );
+
+-- User groups info (name + group_id)
+CREATE TABLE if NOT EXISTS user_group_info (
+  group_id serial PRIMARY KEY,
+  title VARCHAR(50) not null,
+  created_at TIMESTAMP DEFAULT NOW (),
+  user_id UUID REFERENCES users (user_id) ON DELETE CASCADE NOT NULL
+);
+
+-- User groups (connection between group_id and user_id)
+CREATE TABLE if NOT EXISTS user_group (
+  group_id INT REFERENCES user_group_info (group_id) ON DELETE CASCADE,
+  user_id uuid REFERENCES users (user_id) ON DELETE CASCADE,
+  PRIMARY KEY (group_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_group_invitation (
+  invitation_id SERIAL PRIMARY KEY,
+  group_id INT NOT NULL REFERENCES user_group_info (group_id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
+  invitee_id UUID NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW (),
+  UNIQUE (group_id, invitee_id)
+);
+
+CREATE OR REPLACE FUNCTION fn_block_redundant_invites()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM user_group
+        WHERE group_id = NEW.group_id
+        AND user_id = NEW.invitee_id
+    ) THEN
+        RAISE EXCEPTION 'Constraint Violation: User % is already a member of group %', NEW.invitee_id, NEW.group_id;
+END IF;
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Fires BEFORE insert to stop the transaction if the function raises an exception
+CREATE TRIGGER trg_check_existing_membership BEFORE INSERT ON user_group_invitation FOR EACH ROW EXECUTE FUNCTION fn_block_redundant_invites ();
