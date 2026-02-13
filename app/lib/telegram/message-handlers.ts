@@ -2,6 +2,7 @@ import { Context } from 'grammy';
 import { Type } from '@google/genai';
 import postgres from 'postgres';
 
+import { categoriesDictionary } from '@/app/lib/constants';
 import { gemini } from '@/app/lib/gemini';
 
 const token = process.env.TELEGRAM_BOT_TOKEN!;
@@ -18,7 +19,7 @@ const getVendorName = (fileName: string | undefined) => {
 interface IParsedDataItem {
   name: string;
   price: number;
-  category: string;
+  category: number;
 }
 
 interface IParsedData {
@@ -51,30 +52,7 @@ export const pdfHandler = async (ctx: Context) => {
 
   const contents = [
     {
-      text:
-        // 'Role: Act as an expert data extraction assistant specialized in retail receipts.\n' +
-        // '\n' +
-        // 'Task: Analyze the provided PDF receipt and extract the following information into a structured format.\n' +
-        // '\n' +
-        // 'Rules for Extraction:\n' +
-        // '\n' +
-        // 'Item List: List every purchased item.\n' +
-        // '\n' +
-        // 'Ignore Discounts: Do not include discounts, coupons, or price deductions as separate line items. Extract only the standard price of the items.\n' +
-        // '\n' +
-        // 'Naming: Translate the item name to Russian. Include the original Portuguese name in parentheses immediately after (e.g., "Яблоки (Maçãs)").\n' +
-        // '\n' +
-        // 'Categorization: Assign one of two categories to each item:\n' +
-        // '\n' +
-        // 'groceries: Anything edible or drinkable.\n' +
-        // '\n' +
-        // 'other: Non-food items (cleaning supplies, hygiene, bags, etc.).\n' +
-        // '\n' +
-        // 'Pricing (In Cents): Provide the price of each individual item and the Total Price strictly in cents (e.g., a price of 2.28 must be converted to 228).\n' +
-        // '\n' +
-        // 'Metadata: Extract the Date from the receipt in YYYY-MM-DD format and the Total Price in cents.',
-
-        `
+      text: `
         Role: Act as an expert data extraction assistant specialized in retail receipts.
         Task: Analyze the provided PDF receipt and extract the following information into a structured format.
         Rules for Extraction:
@@ -85,9 +63,11 @@ export const pdfHandler = async (ctx: Context) => {
             : ''
         }
         Naming: Translate the item name to Russian. Include the original Portuguese name in parentheses immediately after (e.g., "Яблоки (Maçãs)").
-        Categorization: Assign one of two categories to each item:
-        groceries: Anything edible or drinkable.
-        other: Non-food items (cleaning supplies, hygiene, bags, etc.).
+        Categorization: Assign one of three categories to each item (put category number to the response):
+        Groceries (category number is 1): Anything edible or drinkable.
+        Personal Care (category number is 3): Hygiene (creams, toothbrushes, toothpaste, soap, etc.).
+        Household (category number is 8): Household items (home furnishing & electronics, rags, detergents, dishwasher detergents, etc.).
+        Other (category number is 6): Category for the rest items.
         Pricing (In Cents): Provide the price of each individual item and the Total Price strictly in cents (e.g., a price of 2.28 must be converted to 228).
         Metadata: Extract the Date from the receipt in YYYY-MM-DD format and the Total Price in cents.
         `,
@@ -123,7 +103,7 @@ export const pdfHandler = async (ctx: Context) => {
                 type: Type.NUMBER,
               },
               category: {
-                type: Type.STRING,
+                type: Type.NUMBER,
               },
             },
           },
@@ -184,14 +164,14 @@ export const pdfHandler = async (ctx: Context) => {
         INSERT INTO expense ${sql(
           itemsList.map(i => ({
             name: i.name,
-            category: i.category,
+            category_id: i.category,
             amount: i.price,
             receipt_id: receiptId,
             expense_date: date,
             user_id: user.user_id,
           })),
           'name',
-          'category',
+          'category_id',
           'amount',
           'receipt_id',
           'expense_date',
@@ -206,14 +186,15 @@ export const pdfHandler = async (ctx: Context) => {
   }
 };
 
-const categoriesDictionary: Record<string, string> = {
-  g: 'groceries',
-  pc: 'personal-care',
-  rd: 'restaurants-delivery',
-  t: 'transportation',
-  u: 'utilities',
-  o: 'other',
-  cs: 'clothes-shoes',
+const categoryIdsDictionary: Record<string, number> = {
+  g: 1,
+  u: 2,
+  pc: 3,
+  rd: 4,
+  t: 5,
+  o: 6,
+  cs: 7,
+  h: 8,
 };
 
 const METRO_PRICE = 1.4;
@@ -231,7 +212,7 @@ export const textHandler = async (ctx: Context) => {
 
   const addedBy = message.from.username!;
   let expenseName = name;
-  let expenseCategory = categoriesDictionary[category] || 'other';
+  let expenseCategory = categoryIdsDictionary[category] || 6;
   const amountParsed = amount ? Number(amount.replace(',', '.')) : 0;
   let amountInCents = Math.floor(amountParsed * 100);
 
@@ -243,7 +224,7 @@ export const textHandler = async (ctx: Context) => {
       const number = Number(match[2]);
 
       expenseName = 'Метро';
-      expenseCategory = 'transportation';
+      expenseCategory = 5;
       const expenseAmount = Number(number) * METRO_PRICE;
       amountInCents = Math.floor(expenseAmount * 100);
     } else {
@@ -254,12 +235,12 @@ export const textHandler = async (ctx: Context) => {
 
   try {
     await sql`
-      INSERT INTO expense (name, amount, category, user_id)
+      INSERT INTO expense (name, amount, category_id, user_id)
       VALUES (${expenseName}, ${amountInCents}, ${expenseCategory}, (SELECT user_id FROM users WHERE telegram = ${addedBy}))
     `;
-    await ctx.reply(`✅ ${expenseName} | ${amountInCents} cents | ${expenseCategory}`);
+    await ctx.reply(`✅ ${expenseName} | ${amountInCents} cents | ${categoriesDictionary[expenseCategory]}`);
   } catch (e) {
     console.error(e);
-    await ctx.reply(`❗️ERROR with: ${expenseName} | ${amountInCents} cents | ${expenseCategory}`);
+    await ctx.reply(`❗️ERROR with: ${expenseName} | ${amountInCents} cents | ${categoriesDictionary[expenseCategory]}`);
   }
 };

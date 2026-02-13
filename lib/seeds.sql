@@ -36,9 +36,9 @@ CREATE TABLE if NOT EXISTS expense (
   expense_id SERIAL PRIMARY KEY,
   receipt_id INT REFERENCES receipt (receipt_id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  category_id INT REFERENCES category (category_id) ON DELETE RESTRICT,
+  category_id INT NOT NULL REFERENCES category (category_id) ON DELETE RESTRICT,
   amount INTEGER NOT NULL,
-  user_id UUID REFERENCES users (user_id) ON DELETE RESTRICT,
+  user_id UUID NOT NULL REFERENCES users (user_id) ON DELETE RESTRICT,
   expense_date DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMPTZ DEFAULT NOW ()
 );
