@@ -51,10 +51,10 @@ const createColumns = (handleOpenEdit: (expense: IExpense) => void): ColumnDef<I
     },
   },
   {
-    accessorKey: 'category',
+    accessorKey: 'category_id',
     header: 'Category',
     cell: ({ row }) => {
-      const category = row.getValue('category') as string | null;
+      const category = row.getValue('category_id') as number;
       if (!category) {
         return <div>N/A</div>;
       }
@@ -183,7 +183,7 @@ export function DataTable({ selectedDay }: { selectedDay: Date }) {
   });
 
   const handleEditSubmit = React.useCallback(
-    async (formData: { name: string; category: string; amount: number; expense_date: Date }) => {
+    async (formData: { name: string; category: number; amount: number; expense_date: Date }) => {
       if (!selectedExpense) {
         return;
       }
@@ -313,7 +313,7 @@ export function DataTable({ selectedDay }: { selectedDay: Date }) {
             <EditForm
               defaultValues={{
                 name: selectedExpense.name,
-                category: selectedExpense.category ?? undefined,
+                category: selectedExpense.category_id ?? undefined,
                 amount: selectedExpense.amount,
                 expense_date: selectedExpense.expense_date,
               }}

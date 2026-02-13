@@ -80,16 +80,16 @@ const createColumns = (handleOpenEdit: (expense: IExpense) => void): ColumnDef<I
     enableSorting: true,
   },
   {
-    accessorKey: 'category',
+    accessorKey: 'category_id',
     header: 'Category',
     cell: ({ row }) => {
-      const category = row.getValue('category') as string | null;
-      if (!category) {
+      const category_id = row.getValue('category_id') as number;
+      if (!category_id) {
         return <div>N/A</div>;
       }
       return (
         <Badge variant="outline" className="text-muted-foreground px-1.5">
-          {categoriesDictionary[category]}
+          {categoriesDictionary[category_id]}
         </Badge>
       );
     },
@@ -175,7 +175,7 @@ export function MonthlyTable({ year, month }: MonthlyTableProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [page, setPage] = React.useState(1);
   const [total, setTotal] = React.useState(0);
-  const [categoryFilter, setCategoryFilter] = React.useState<string | undefined>(undefined);
+  const [categoryFilter, setCategoryFilter] = React.useState<number | undefined>(undefined);
 
   const isMobile = useIsMobile();
 
@@ -244,7 +244,7 @@ export function MonthlyTable({ year, month }: MonthlyTableProps) {
   });
 
   const handleEditSubmit = React.useCallback(
-    async (formData: { name: string; category: string; amount: number; expense_date: Date }) => {
+    async (formData: { name: string; category: number; amount: number; expense_date: Date }) => {
       if (!selectedExpense) {
         return;
       }
@@ -264,14 +264,14 @@ export function MonthlyTable({ year, month }: MonthlyTableProps) {
     [loadExpenses, selectedExpense],
   );
 
-  const categoryFilterValue = categoryFilter ?? 'all';
+  const categoryFilterValue = categoryFilter ?? 999;
   const categoryOptions = [
-    { value: 'all', label: 'All Categories' },
+    { value: 999, label: 'All Categories' },
     ...Object.entries(categoriesDictionary).map(([key, label]) => ({ value: key, label })),
   ];
 
-  const handleCategoryFilterChange = React.useCallback((value: string) => {
-    setCategoryFilter(value === 'all' ? undefined : value);
+  const handleCategoryFilterChange = React.useCallback((value: number) => {
+    setCategoryFilter(value === 999 ? undefined : value);
   }, []);
 
   return (
@@ -285,7 +285,7 @@ export function MonthlyTable({ year, month }: MonthlyTableProps) {
                 id="category-select"
                 value={categoryFilterValue}
                 onChange={e => {
-                  handleCategoryFilterChange(e.target.value);
+                  handleCategoryFilterChange(Number(e.target.value));
                 }}
               >
                 {categoryOptions.map(option => (
@@ -295,13 +295,16 @@ export function MonthlyTable({ year, month }: MonthlyTableProps) {
                 ))}
               </NativeSelect>
             ) : (
-              <Select value={categoryFilterValue} onValueChange={handleCategoryFilterChange}>
+              <Select
+                value={String(categoryFilterValue)}
+                onValueChange={(value: string) => handleCategoryFilterChange(Number(value))}
+              >
                 <SelectTrigger id="category-select" className="w-[200px]">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
                   {categoryOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <SelectItem key={option.value} value={String(option.value)}>
                       {option.label}
                     </SelectItem>
                   ))}
@@ -438,7 +441,7 @@ export function MonthlyTable({ year, month }: MonthlyTableProps) {
             <EditForm
               defaultValues={{
                 name: selectedExpense.name,
-                category: selectedExpense.category ?? undefined,
+                category: selectedExpense.category_id ?? undefined,
                 amount: selectedExpense.amount,
                 expense_date: selectedExpense.expense_date,
               }}

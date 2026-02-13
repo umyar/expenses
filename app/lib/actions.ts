@@ -37,7 +37,7 @@ export async function getExpensesByDay(day: Date) {
 
 type EditExpenseInput = {
   name: string;
-  category: string;
+  category: number;
   amount: number;
   expense_date: Date;
 };

@@ -3,13 +3,7 @@
 import * as React from 'react';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/date-picker';
 import { categoriesDictionary } from '@/app/lib/constants';
 import { Button } from '@/components/ui/button';
@@ -17,16 +11,11 @@ import { Button } from '@/components/ui/button';
 interface EditFormProps {
   defaultValues?: {
     name?: string;
-    category?: string;
-    amount?: number; // amount in cents
+    category?: number;
+    amount?: number;
     expense_date?: Date | string;
   };
-  onSubmit?: (data: {
-    name: string;
-    category: string;
-    amount: number; // amount in cents
-    expense_date: Date;
-  }) => Promise<void> | void;
+  onSubmit?: (data: { name: string; category: number; amount: number; expense_date: Date }) => Promise<void> | void;
   className?: string;
   submitLabel?: string;
   isSubmitting?: boolean;
@@ -40,18 +29,14 @@ export function EditForm({
   isSubmitting = false,
 }: EditFormProps) {
   const [name, setName] = React.useState(defaultValues?.name || '');
-  const [category, setCategory] = React.useState<string | undefined>(
-    defaultValues?.category
-  );
-  const [amount, setAmount] = React.useState(
-    defaultValues?.amount ? (defaultValues.amount / 100).toFixed(2) : ''
-  );
+  const [category, setCategory] = React.useState<number | undefined>(defaultValues?.category);
+  const [amount, setAmount] = React.useState(defaultValues?.amount ? (defaultValues.amount / 100).toFixed(2) : '');
   const [expenseDate, setExpenseDate] = React.useState<Date | undefined>(
     defaultValues?.expense_date
       ? typeof defaultValues.expense_date === 'string'
         ? new Date(defaultValues.expense_date)
         : defaultValues.expense_date
-      : undefined
+      : undefined,
   );
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -68,7 +53,7 @@ export function EditForm({
 
     await onSubmit({
       name,
-      category: category || 'other',
+      category: category || 6,
       amount: amountInCents,
       expense_date: selectedDate,
     });
@@ -83,7 +68,7 @@ export function EditForm({
             id="name"
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
             placeholder="Enter expense name"
             required
           />
@@ -91,7 +76,7 @@ export function EditForm({
 
         <Field>
           <FieldLabel htmlFor="category">Category</FieldLabel>
-          <Select value={category || undefined} onValueChange={setCategory}>
+          <Select value={String(category) || undefined} onValueChange={(value: string) => setCategory(Number(value))}>
             <SelectTrigger id="category" className="w-full">
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
@@ -113,7 +98,7 @@ export function EditForm({
             step="0.01"
             min="0"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={e => setAmount(e.target.value)}
             placeholder="0.00"
             required
           />
@@ -139,4 +124,3 @@ export function EditForm({
     </form>
   );
 }
-

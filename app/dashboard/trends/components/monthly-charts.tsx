@@ -31,8 +31,8 @@ export function MonthlyCharts({ data }: IMonthlyChartsProps) {
         acc[monthKey] = {};
       }
 
-      if (!acc[monthKey][item.category]) {
-        acc[monthKey][item.category] = item.total;
+      if (!acc[monthKey][item.category_id]) {
+        acc[monthKey][item.category_id] = item.total;
       }
 
       return acc;
@@ -40,11 +40,14 @@ export function MonthlyCharts({ data }: IMonthlyChartsProps) {
     {} as Record<string, Record<string, number>>,
   );
 
+  console.log('🆘 groupedByMonth', groupedByMonth);
+  
   // Transform grouped data for charts
   const chartData = Object.entries(groupedByMonth)
     .map(([monthKey, categories]) => {
       const chartItems = Object.entries(categories).map(([name, value], catIndex) => ({
-        name: categoriesDictionary[name] || name,
+        // name: categoriesDictionary[name] || name,
+        name: name,
         value: value / 100,
         fill: chartColors[catIndex % chartColors.length],
       }));

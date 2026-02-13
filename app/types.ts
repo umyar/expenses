@@ -1,7 +1,7 @@
 export interface IExpense {
   expense_id: number;
   name: string;
-  category: string | null;
+  category_id: number;
   amount: number;
   receipt_id: number | null;
   expense_date: string;
@@ -16,4 +16,4 @@ export interface IReceipt {
   created_at: string;
 }
 
-export type VendorT = '1' | '2';
+export type VendorT = '1' | '2' | '3';

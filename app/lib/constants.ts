@@ -14,4 +14,5 @@ export const categoriesDictionary: Record<number, string> = {
 export const vendorNames: Record<VendorT, string> = {
   '1': 'Continente',
   '2': 'Pingo Doce',
+  '3': 'Wells',
 };
