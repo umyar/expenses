@@ -24,11 +24,11 @@ export function MonthlyChart({ data }: IMonthlyChartProps) {
 
   data.forEach((categoryData, index) => {
     chartItems.push({
-      name: categoriesDictionary[categoryData.category_id] || categoryData.category_id,
+      name: categoriesDictionary[categoryData.category] || categoryData.category,
       value: categoryData.total / 100,
       fill: chartColors[index % chartColors.length],
     });
-    config[categoryData.category_id] = { label: categoryData.category_id };
+    config[categoryData.category] = { label: categoryData.category };
     total += categoryData.total / 100;
   });
 

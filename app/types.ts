@@ -11,7 +11,7 @@ export interface IExpense {
 export interface IReceipt {
   receipt_id: number;
   receipt_date: string;
-  vendor: VendorT;
+  vendor_id: VendorT;
   amount: number | null;
   created_at: string;
 }

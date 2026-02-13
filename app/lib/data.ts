@@ -142,7 +142,7 @@ export async function fetchMonthSpent(year: number, month: number) {
 export type MonthlyCategoryTotalT = {
   year: number;
   month: number;
-  category_id: number;
+  category: number;
   total: number;
 };
 
@@ -261,7 +261,7 @@ export async function fetchReceipts({ page = 1, pageSize = 15, sortOrder = 'desc
         `SELECT 
           receipt_id,
           receipt_date,
-          vendor,
+          vendor_id,
           amount
         FROM receipt
         ORDER BY receipt_date ${safeSortOrder}

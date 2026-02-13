@@ -48,7 +48,7 @@ const createColumns = (
       const receipt = row.original;
       return (
         <button
-          onClick={() => handleOpenExpenses({ id: receipt.receipt_id, vendor: receipt.vendor })}
+          onClick={() => handleOpenExpenses({ id: receipt.receipt_id, vendor: receipt.vendor_id })}
           className="underline cursor-pointer text-left"
         >
           {format(date, 'MMMM d, yyyy')}
@@ -58,10 +58,10 @@ const createColumns = (
     enableSorting: true,
   },
   {
-    accessorKey: 'vendor',
+    accessorKey: 'vendor_id',
     header: 'Vendor',
     cell: ({ row }) => {
-      const vendor = row.getValue('vendor') as VendorT;
+      const vendor = row.getValue('vendor_id') as VendorT;
 
       return (
         <div>
