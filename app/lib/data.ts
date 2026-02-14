@@ -1,6 +1,18 @@
 import postgres from 'postgres';
 
+import { auth } from '@/auth';
 import { IReceipt } from '@/app/types';
+
+const getUserId = async () => {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    throw new Error('Unauthorized');
+  }
+
+  return userId;
+};
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 

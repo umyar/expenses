@@ -16,6 +16,20 @@ export const authConfig = {
       }
       return true;
     },
+    jwt({ token, user }) {
+      // Persist user id to the token (user is only passed on sign-in)
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    session({ session, token }) {
+      // Expose user id on the session for use in getUserId() etc.
+      if (session.user) {
+        session.user.id = token.id as string;
+      }
+      return session;
+    },
   },
   providers: [], // Add providers with an empty array for now
 } satisfies NextAuthConfig;

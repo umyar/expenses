@@ -6,7 +6,7 @@ import bcrypt from 'bcrypt';
 import postgres from 'postgres';
 
 type User = {
-  id: string;
+  user_id: string;
   name: string;
   email: string;
   password: string;
@@ -16,7 +16,7 @@ const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
 async function getUser(email: string): Promise<User | undefined> {
   try {
-    const user = await sql<User[]>`SELECT name, password FROM users WHERE email=${email}`;
+    const user = await sql<User[]>`SELECT user_id, name, email, password FROM users WHERE email=${email}`;
     return user[0];
   } catch (error) {
     console.error('Failed to fetch user:', error);
@@ -38,7 +38,7 @@ export const { auth, signIn, signOut } = NextAuth({
           if (!user) return null;
           const passwordsMatch = await bcrypt.compare(password, user.password);
 
-          if (passwordsMatch) return user;
+          if (passwordsMatch) return { id: user.user_id, name: user.name, email: user.email };
         }
 
         return null;
